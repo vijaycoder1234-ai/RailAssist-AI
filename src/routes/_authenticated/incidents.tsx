@@ -17,8 +17,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/use-auth";
 import { db, type IncidentRow, type IncidentSeverity, type IncidentStatus, type IncidentCategory } from "@/lib/db";
 import { analyzeIncident } from "@/lib/ai-incident.functions";
+import { downloadIncidentPdf } from "@/lib/incident-pdf";
+import { ensureNotificationPermission, showBrowserNotification, notifyUser } from "@/lib/notifications";
+import { IncidentMap } from "@/components/incident-map";
 import {
-  AlertTriangle, Plus, MapPin, Sparkles, ImagePlus, Loader2, CheckCircle2, Clock, Activity,
+  AlertTriangle, Plus, MapPin, Sparkles, ImagePlus, Loader2, CheckCircle2, Clock, Activity, Download, Map as MapIcon,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/incidents")({

@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useMemo, useState, type ReactNode
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
-export type AppRole = "super_admin" | "inspector";
+export type AppRole = "super_admin" | "inspector" | "maintenance";
 export type InspectorStatus = "pending" | "approved" | "rejected" | "suspended";
 
 export interface AuthProfile {

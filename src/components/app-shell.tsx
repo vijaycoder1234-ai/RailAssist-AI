@@ -30,12 +30,12 @@ const adminNav: NavItem[] = [
   { to: "/admin", label: "Inspectors", icon: Users },
 ];
 
-export function AppShell({ children, kind }: { children: ReactNode; kind: "inspector" | "admin" }) {
+export function AppShell({ children, kind }: { children: ReactNode; kind: "inspector" | "admin" | "maintenance" }) {
   const { profile, signOut } = useAuth();
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
-  const nav = kind === "admin" ? adminNav : inspectorNav;
+  const nav = kind === "admin" ? adminNav : kind === "maintenance" ? maintenanceNav : inspectorNav;
   const initials = (profile?.full_name ?? profile?.email ?? "U").slice(0, 2).toUpperCase();
 
   return (

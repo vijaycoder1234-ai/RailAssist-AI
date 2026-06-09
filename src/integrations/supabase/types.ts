@@ -14,6 +14,232 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_runs: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          incident_id: string | null
+          model: string
+          output: Json | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          incident_id?: string | null
+          model: string
+          output?: Json | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          incident_id?: string | null
+          model?: string
+          output?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_runs_incident_id_fkey"
+            columns: ["incident_id"]
+            isOneToOne: false
+            referencedRelation: "incidents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      assets: {
+        Row: {
+          code: string | null
+          created_at: string
+          health_score: number
+          id: string
+          installation_date: string | null
+          last_inspection_date: string | null
+          location_lat: number | null
+          location_lng: number | null
+          name: string
+          notes: string | null
+          station_id: string | null
+          status: Database["public"]["Enums"]["asset_status"]
+          type: Database["public"]["Enums"]["asset_type"]
+          updated_at: string
+          zone_id: string | null
+        }
+        Insert: {
+          code?: string | null
+          created_at?: string
+          health_score?: number
+          id?: string
+          installation_date?: string | null
+          last_inspection_date?: string | null
+          location_lat?: number | null
+          location_lng?: number | null
+          name: string
+          notes?: string | null
+          station_id?: string | null
+          status?: Database["public"]["Enums"]["asset_status"]
+          type?: Database["public"]["Enums"]["asset_type"]
+          updated_at?: string
+          zone_id?: string | null
+        }
+        Update: {
+          code?: string | null
+          created_at?: string
+          health_score?: number
+          id?: string
+          installation_date?: string | null
+          last_inspection_date?: string | null
+          location_lat?: number | null
+          location_lng?: number | null
+          name?: string
+          notes?: string | null
+          station_id?: string | null
+          status?: Database["public"]["Enums"]["asset_status"]
+          type?: Database["public"]["Enums"]["asset_type"]
+          updated_at?: string
+          zone_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assets_station_id_fkey"
+            columns: ["station_id"]
+            isOneToOne: false
+            referencedRelation: "stations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assets_zone_id_fkey"
+            columns: ["zone_id"]
+            isOneToOne: false
+            referencedRelation: "zones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      incident_media: {
+        Row: {
+          created_at: string
+          file_path: string
+          id: string
+          incident_id: string
+          kind: string
+          mime_type: string | null
+          uploaded_by: string
+        }
+        Insert: {
+          created_at?: string
+          file_path: string
+          id?: string
+          incident_id: string
+          kind?: string
+          mime_type?: string | null
+          uploaded_by: string
+        }
+        Update: {
+          created_at?: string
+          file_path?: string
+          id?: string
+          incident_id?: string
+          kind?: string
+          mime_type?: string | null
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "incident_media_incident_id_fkey"
+            columns: ["incident_id"]
+            isOneToOne: false
+            referencedRelation: "incidents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      incidents: {
+        Row: {
+          ai_categories: string[] | null
+          ai_severity: Database["public"]["Enums"]["incident_severity"] | null
+          ai_suggested_actions: string | null
+          ai_summary: string | null
+          assigned_to: string | null
+          category: Database["public"]["Enums"]["incident_category"]
+          created_at: string
+          description: string
+          id: string
+          location_lat: number | null
+          location_lng: number | null
+          location_text: string | null
+          reporter_id: string
+          resolved_at: string | null
+          severity: Database["public"]["Enums"]["incident_severity"]
+          station_id: string | null
+          status: Database["public"]["Enums"]["incident_status"]
+          title: string
+          updated_at: string
+          zone_id: string | null
+        }
+        Insert: {
+          ai_categories?: string[] | null
+          ai_severity?: Database["public"]["Enums"]["incident_severity"] | null
+          ai_suggested_actions?: string | null
+          ai_summary?: string | null
+          assigned_to?: string | null
+          category?: Database["public"]["Enums"]["incident_category"]
+          created_at?: string
+          description: string
+          id?: string
+          location_lat?: number | null
+          location_lng?: number | null
+          location_text?: string | null
+          reporter_id: string
+          resolved_at?: string | null
+          severity?: Database["public"]["Enums"]["incident_severity"]
+          station_id?: string | null
+          status?: Database["public"]["Enums"]["incident_status"]
+          title: string
+          updated_at?: string
+          zone_id?: string | null
+        }
+        Update: {
+          ai_categories?: string[] | null
+          ai_severity?: Database["public"]["Enums"]["incident_severity"] | null
+          ai_suggested_actions?: string | null
+          ai_summary?: string | null
+          assigned_to?: string | null
+          category?: Database["public"]["Enums"]["incident_category"]
+          created_at?: string
+          description?: string
+          id?: string
+          location_lat?: number | null
+          location_lng?: number | null
+          location_text?: string | null
+          reporter_id?: string
+          resolved_at?: string | null
+          severity?: Database["public"]["Enums"]["incident_severity"]
+          station_id?: string | null
+          status?: Database["public"]["Enums"]["incident_status"]
+          title?: string
+          updated_at?: string
+          zone_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "incidents_station_id_fkey"
+            columns: ["station_id"]
+            isOneToOne: false
+            referencedRelation: "stations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "incidents_zone_id_fkey"
+            columns: ["zone_id"]
+            isOneToOne: false
+            referencedRelation: "zones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       inspectors: {
         Row: {
           approved_at: string | null
@@ -75,6 +301,151 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      maintenance_logs: {
+        Row: {
+          action: string
+          asset_id: string
+          created_at: string
+          id: string
+          next_due_at: string | null
+          notes: string | null
+          performed_at: string
+          performed_by: string | null
+        }
+        Insert: {
+          action: string
+          asset_id: string
+          created_at?: string
+          id?: string
+          next_due_at?: string | null
+          notes?: string | null
+          performed_at?: string
+          performed_by?: string | null
+        }
+        Update: {
+          action?: string
+          asset_id?: string
+          created_at?: string
+          id?: string
+          next_due_at?: string | null
+          notes?: string | null
+          performed_at?: string
+          performed_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_logs_asset_id_fkey"
+            columns: ["asset_id"]
+            isOneToOne: false
+            referencedRelation: "assets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      maintenance_tasks: {
+        Row: {
+          accepted_at: string | null
+          after_photos: string[] | null
+          assigned_by: string | null
+          assigned_to: string
+          before_photos: string[] | null
+          completed_at: string | null
+          completion_report: string | null
+          created_at: string
+          due_at: string | null
+          id: string
+          incident_id: string
+          notes: string | null
+          priority: Database["public"]["Enums"]["task_priority"]
+          remarks: string | null
+          started_at: string | null
+          status: Database["public"]["Enums"]["task_status"]
+          updated_at: string
+          verified_at: string | null
+        }
+        Insert: {
+          accepted_at?: string | null
+          after_photos?: string[] | null
+          assigned_by?: string | null
+          assigned_to: string
+          before_photos?: string[] | null
+          completed_at?: string | null
+          completion_report?: string | null
+          created_at?: string
+          due_at?: string | null
+          id?: string
+          incident_id: string
+          notes?: string | null
+          priority?: Database["public"]["Enums"]["task_priority"]
+          remarks?: string | null
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["task_status"]
+          updated_at?: string
+          verified_at?: string | null
+        }
+        Update: {
+          accepted_at?: string | null
+          after_photos?: string[] | null
+          assigned_by?: string | null
+          assigned_to?: string
+          before_photos?: string[] | null
+          completed_at?: string | null
+          completion_report?: string | null
+          created_at?: string
+          due_at?: string | null
+          id?: string
+          incident_id?: string
+          notes?: string | null
+          priority?: Database["public"]["Enums"]["task_priority"]
+          remarks?: string | null
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["task_status"]
+          updated_at?: string
+          verified_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_tasks_incident_id_fkey"
+            columns: ["incident_id"]
+            isOneToOne: false
+            referencedRelation: "incidents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notifications: {
+        Row: {
+          body: string | null
+          created_at: string
+          id: string
+          link: string | null
+          read: boolean
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          link?: string | null
+          read?: boolean
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          link?: string | null
+          read?: boolean
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
@@ -224,8 +595,48 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "super_admin" | "inspector"
+      app_role: "super_admin" | "inspector" | "maintenance"
+      asset_status:
+        | "operational"
+        | "needs_attention"
+        | "critical"
+        | "under_maintenance"
+        | "decommissioned"
+      asset_type:
+        | "track"
+        | "signal"
+        | "bridge"
+        | "platform"
+        | "rolling_stock"
+        | "electrical"
+        | "crossing"
+        | "other"
+      incident_category:
+        | "signal"
+        | "track"
+        | "rolling_stock"
+        | "safety"
+        | "infrastructure"
+        | "passenger"
+        | "electrical"
+        | "other"
+      incident_severity: "low" | "medium" | "high" | "critical"
+      incident_status:
+        | "open"
+        | "triaged"
+        | "in_progress"
+        | "awaiting_verification"
+        | "resolved"
+        | "closed"
       inspector_status: "pending" | "approved" | "rejected" | "suspended"
+      task_priority: "low" | "medium" | "high" | "critical"
+      task_status:
+        | "assigned"
+        | "accepted"
+        | "in_progress"
+        | "awaiting_verification"
+        | "completed"
+        | "rejected"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -353,8 +764,53 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["super_admin", "inspector"],
+      app_role: ["super_admin", "inspector", "maintenance"],
+      asset_status: [
+        "operational",
+        "needs_attention",
+        "critical",
+        "under_maintenance",
+        "decommissioned",
+      ],
+      asset_type: [
+        "track",
+        "signal",
+        "bridge",
+        "platform",
+        "rolling_stock",
+        "electrical",
+        "crossing",
+        "other",
+      ],
+      incident_category: [
+        "signal",
+        "track",
+        "rolling_stock",
+        "safety",
+        "infrastructure",
+        "passenger",
+        "electrical",
+        "other",
+      ],
+      incident_severity: ["low", "medium", "high", "critical"],
+      incident_status: [
+        "open",
+        "triaged",
+        "in_progress",
+        "awaiting_verification",
+        "resolved",
+        "closed",
+      ],
       inspector_status: ["pending", "approved", "rejected", "suspended"],
+      task_priority: ["low", "medium", "high", "critical"],
+      task_status: [
+        "assigned",
+        "accepted",
+        "in_progress",
+        "awaiting_verification",
+        "completed",
+        "rejected",
+      ],
     },
   },
 } as const

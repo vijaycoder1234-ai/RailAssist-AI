@@ -182,6 +182,16 @@ function RegisterForm({ zones, onSuccess }: { zones: Zone[]; onSuccess: () => vo
     <form onSubmit={submit} className="space-y-3">
       <div className="grid grid-cols-2 gap-3">
         <div className="col-span-2">
+          <Label>Register as</Label>
+          <Select value={form.role} onValueChange={(v) => setForm((f) => ({ ...f, role: v as "inspector" | "maintenance" }))}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="inspector">Railway Inspector</SelectItem>
+              <SelectItem value="maintenance">Maintenance Team</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="col-span-2">
           <Label>Full name</Label>
           <Input required value={form.full_name} onChange={set("full_name")} />
         </div>

@@ -32,7 +32,7 @@ interface Zone { id: string; name: string; code: string }
 function AuthPage() {
   const search = Route.useSearch();
   const navigate = useNavigate();
-  const { user, loading, isSuperAdmin, isInspector, inspector } = useAuth();
+  const { user, loading, isSuperAdmin, isInspector, isMaintenance, inspector } = useAuth();
   const [tab, setTab] = useState<"login" | "register">(search.tab ?? "login");
   const [zones, setZones] = useState<Zone[]>([]);
 
@@ -46,9 +46,11 @@ function AuthPage() {
   useEffect(() => {
     if (loading || !user) return;
     if (isSuperAdmin) navigate({ to: "/admin" });
-    else if (isInspector && inspector?.status === "approved") navigate({ to: "/dashboard" });
+    else if (inspector?.status !== "approved") navigate({ to: "/auth/pending" });
+    else if (isMaintenance) navigate({ to: "/maintenance" });
+    else if (isInspector) navigate({ to: "/dashboard" });
     else navigate({ to: "/auth/pending" });
-  }, [loading, user, isSuperAdmin, isInspector, inspector, navigate]);
+  }, [loading, user, isSuperAdmin, isInspector, isMaintenance, inspector, navigate]);
 
   return (
     <div className="relative min-h-screen flex items-center justify-center bg-background px-4 py-10">

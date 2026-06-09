@@ -44,11 +44,17 @@ function IncidentsPage() {
   const { isSuperAdmin, isInspector, inspector, user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [items, setItems] = useState<IncidentRow[]>([]);
+  const [zones, setZones] = useState<{ id: string; name: string; code: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<"all" | IncidentStatus>("all");
   const [q, setQ] = useState("");
+  const [severityFilter, setSeverityFilter] = useState<"all" | IncidentSeverity>("all");
+  const [zoneFilter, setZoneFilter] = useState<string>("all");
+  const [showMap, setShowMap] = useState(true);
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState<IncidentRow | null>(null);
+
+  useEffect(() => { ensureNotificationPermission(); }, []);
 
   useEffect(() => {
     if (authLoading) return;
@@ -56,6 +62,10 @@ function IncidentsPage() {
       navigate({ to: "/auth/pending" });
     }
   }, [authLoading, isInspector, inspector, isSuperAdmin, navigate]);
+
+  useEffect(() => {
+    db.from("zones").select("id, name, code").order("name").then(({ data }: { data: { id: string; name: string; code: string }[] | null }) => setZones(data ?? []));
+  }, []);
 
   const load = async () => {
     setLoading(true);

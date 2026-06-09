@@ -15,13 +15,19 @@ const inspectorNav: NavItem[] = [
   { to: "/incidents", label: "Incidents", icon: AlertTriangle },
 ];
 
+const maintenanceNav: NavItem[] = [
+  { to: "/maintenance", label: "My Tasks", icon: Wrench },
+  { to: "/incidents", label: "Incidents", icon: AlertTriangle },
+];
+
 const adminNav: NavItem[] = [
   { to: "/admin", label: "Operations", icon: LayoutDashboard },
   { to: "/incidents", label: "Incidents", icon: AlertTriangle },
-  { to: "/assets", label: "Assets & Maintenance", icon: Wrench },
-  { to: "/analytics", label: "Safety Analytics", icon: BarChart3 },
+  { to: "/assets", label: "Assets", icon: Wrench },
+  { to: "/maintenance", label: "Maintenance Tasks", icon: Wrench },
+  { to: "/stations", label: "Stations", icon: MapPin },
+  { to: "/analytics", label: "Analytics", icon: BarChart3 },
   { to: "/admin", label: "Inspectors", icon: Users },
-  { to: "/admin", label: "Zones", icon: MapPin },
 ];
 
 export function AppShell({ children, kind }: { children: ReactNode; kind: "inspector" | "admin" }) {

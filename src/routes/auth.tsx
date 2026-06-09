@@ -124,13 +124,13 @@ function LoginForm() {
 }
 
 const registerSchema = z.object({
-  full_name: z.string().trim().min(2).max(120),
-  email: z.string().trim().email().max(255),
-  password: z.string().min(8).max(72),
-  employee_id: z.string().trim().min(2).max(60),
-  phone: z.string().trim().min(7).max(20),
-  designation: z.string().trim().min(2).max(120),
-  zone_id: z.string().uuid(),
+  full_name: z.string().trim().min(2, "Enter your full name").max(120),
+  email: z.string().trim().email("Enter a valid email").max(255),
+  password: z.string().min(8, "Password must be at least 8 characters").max(72),
+  employee_id: z.string().trim().min(2, "Enter your employee ID").max(60),
+  phone: z.string().trim().min(7, "Enter a valid phone number").max(20),
+  designation: z.string().trim().min(2, "Enter your designation").max(120),
+  zone_id: z.string().uuid("Please select your railway zone"),
 });
 
 function RegisterForm({ zones, onSuccess }: { zones: Zone[]; onSuccess: () => void }) {

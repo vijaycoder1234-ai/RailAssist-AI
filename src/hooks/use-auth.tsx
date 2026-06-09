@@ -104,6 +104,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       roles,
       isSuperAdmin: roles.includes("super_admin"),
       isInspector: roles.includes("inspector"),
+      isMaintenance: roles.includes("maintenance"),
       inspector,
       refresh: async () => {
         if (user) await loadProfile(user.id);

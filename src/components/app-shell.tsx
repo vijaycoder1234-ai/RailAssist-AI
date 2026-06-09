@@ -2,7 +2,7 @@ import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { type ReactNode } from "react";
 import {
   Train, LayoutDashboard, AlertTriangle, Users, MapPin, Wrench, BarChart3,
-  FileText, Settings, Brain, LogOut, ShieldCheck,
+  LogOut, ShieldCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";

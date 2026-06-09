@@ -28,6 +28,7 @@ interface AuthCtx {
   roles: AppRole[];
   isSuperAdmin: boolean;
   isInspector: boolean;
+  isMaintenance: boolean;
   inspector: InspectorRecord | null;
   refresh: () => Promise<void>;
   signOut: () => Promise<void>;

@@ -12,19 +12,16 @@ interface NavItem { to: string; label: string; icon: typeof Train }
 
 const inspectorNav: NavItem[] = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/dashboard", label: "My Incidents", icon: AlertTriangle },
+  { to: "/incidents", label: "Incidents", icon: AlertTriangle },
 ];
 
 const adminNav: NavItem[] = [
-  { to: "/admin", label: "Overview", icon: LayoutDashboard },
-  { to: "/admin", label: "Incidents", icon: AlertTriangle },
+  { to: "/admin", label: "Operations", icon: LayoutDashboard },
+  { to: "/incidents", label: "Incidents", icon: AlertTriangle },
+  { to: "/assets", label: "Assets & Maintenance", icon: Wrench },
+  { to: "/analytics", label: "Safety Analytics", icon: BarChart3 },
   { to: "/admin", label: "Inspectors", icon: Users },
   { to: "/admin", label: "Zones", icon: MapPin },
-  { to: "/admin", label: "Maintenance", icon: Wrench },
-  { to: "/admin", label: "Analytics", icon: BarChart3 },
-  { to: "/admin", label: "AI Center", icon: Brain },
-  { to: "/admin", label: "Reports", icon: FileText },
-  { to: "/admin", label: "Settings", icon: Settings },
 ];
 
 export function AppShell({ children, kind }: { children: ReactNode; kind: "inspector" | "admin" }) {

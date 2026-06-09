@@ -124,6 +124,7 @@ function LoginForm() {
 }
 
 const registerSchema = z.object({
+  role: z.enum(["inspector", "maintenance"]),
   full_name: z.string().trim().min(2, "Enter your full name").max(120),
   email: z.string().trim().email("Enter a valid email").max(255),
   password: z.string().min(8, "Password must be at least 8 characters").max(72),
@@ -135,6 +136,7 @@ const registerSchema = z.object({
 
 function RegisterForm({ zones, onSuccess }: { zones: Zone[]; onSuccess: () => void }) {
   const [form, setForm] = useState({
+    role: "inspector" as "inspector" | "maintenance",
     full_name: "", email: "", password: "",
     employee_id: "", phone: "", designation: "", zone_id: "",
   });
@@ -158,6 +160,7 @@ function RegisterForm({ zones, onSuccess }: { zones: Zone[]; onSuccess: () => vo
       options: {
         emailRedirectTo: redirectUrl,
         data: {
+          role: parsed.data.role,
           full_name: parsed.data.full_name,
           employee_id: parsed.data.employee_id,
           phone: parsed.data.phone,

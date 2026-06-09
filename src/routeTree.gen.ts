@@ -16,7 +16,10 @@ import { Route as AboutRouteImport } from './routes/about'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthPendingRouteImport } from './routes/auth.pending'
+import { Route as AuthenticatedIncidentsRouteImport } from './routes/_authenticated/incidents'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedAssetsRouteImport } from './routes/_authenticated/assets'
+import { Route as AuthenticatedAnalyticsRouteImport } from './routes/_authenticated/analytics'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 
 const FeaturesRoute = FeaturesRouteImport.update({
@@ -53,9 +56,24 @@ const AuthPendingRoute = AuthPendingRouteImport.update({
   path: '/pending',
   getParentRoute: () => AuthRoute,
 } as any)
+const AuthenticatedIncidentsRoute = AuthenticatedIncidentsRouteImport.update({
+  id: '/incidents',
+  path: '/incidents',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedAssetsRoute = AuthenticatedAssetsRouteImport.update({
+  id: '/assets',
+  path: '/assets',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedAnalyticsRoute = AuthenticatedAnalyticsRouteImport.update({
+  id: '/analytics',
+  path: '/analytics',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
@@ -71,7 +89,10 @@ export interface FileRoutesByFullPath {
   '/contact': typeof ContactRoute
   '/features': typeof FeaturesRoute
   '/admin': typeof AuthenticatedAdminRoute
+  '/analytics': typeof AuthenticatedAnalyticsRoute
+  '/assets': typeof AuthenticatedAssetsRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/incidents': typeof AuthenticatedIncidentsRoute
   '/auth/pending': typeof AuthPendingRoute
 }
 export interface FileRoutesByTo {
@@ -81,7 +102,10 @@ export interface FileRoutesByTo {
   '/contact': typeof ContactRoute
   '/features': typeof FeaturesRoute
   '/admin': typeof AuthenticatedAdminRoute
+  '/analytics': typeof AuthenticatedAnalyticsRoute
+  '/assets': typeof AuthenticatedAssetsRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/incidents': typeof AuthenticatedIncidentsRoute
   '/auth/pending': typeof AuthPendingRoute
 }
 export interface FileRoutesById {
@@ -93,7 +117,10 @@ export interface FileRoutesById {
   '/contact': typeof ContactRoute
   '/features': typeof FeaturesRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
+  '/_authenticated/analytics': typeof AuthenticatedAnalyticsRoute
+  '/_authenticated/assets': typeof AuthenticatedAssetsRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/incidents': typeof AuthenticatedIncidentsRoute
   '/auth/pending': typeof AuthPendingRoute
 }
 export interface FileRouteTypes {
@@ -105,7 +132,10 @@ export interface FileRouteTypes {
     | '/contact'
     | '/features'
     | '/admin'
+    | '/analytics'
+    | '/assets'
     | '/dashboard'
+    | '/incidents'
     | '/auth/pending'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -115,7 +145,10 @@ export interface FileRouteTypes {
     | '/contact'
     | '/features'
     | '/admin'
+    | '/analytics'
+    | '/assets'
     | '/dashboard'
+    | '/incidents'
     | '/auth/pending'
   id:
     | '__root__'
@@ -126,7 +159,10 @@ export interface FileRouteTypes {
     | '/contact'
     | '/features'
     | '/_authenticated/admin'
+    | '/_authenticated/analytics'
+    | '/_authenticated/assets'
     | '/_authenticated/dashboard'
+    | '/_authenticated/incidents'
     | '/auth/pending'
   fileRoutesById: FileRoutesById
 }
@@ -190,11 +226,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthPendingRouteImport
       parentRoute: typeof AuthRoute
     }
+    '/_authenticated/incidents': {
+      id: '/_authenticated/incidents'
+      path: '/incidents'
+      fullPath: '/incidents'
+      preLoaderRoute: typeof AuthenticatedIncidentsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/dashboard': {
       id: '/_authenticated/dashboard'
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/assets': {
+      id: '/_authenticated/assets'
+      path: '/assets'
+      fullPath: '/assets'
+      preLoaderRoute: typeof AuthenticatedAssetsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/analytics': {
+      id: '/_authenticated/analytics'
+      path: '/analytics'
+      fullPath: '/analytics'
+      preLoaderRoute: typeof AuthenticatedAnalyticsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/admin': {
@@ -209,12 +266,18 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
+  AuthenticatedAnalyticsRoute: typeof AuthenticatedAnalyticsRoute
+  AuthenticatedAssetsRoute: typeof AuthenticatedAssetsRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedIncidentsRoute: typeof AuthenticatedIncidentsRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRoute,
+  AuthenticatedAnalyticsRoute: AuthenticatedAnalyticsRoute,
+  AuthenticatedAssetsRoute: AuthenticatedAssetsRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedIncidentsRoute: AuthenticatedIncidentsRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =

@@ -321,7 +321,7 @@ function IncidentDetailDialog({ incident, canManage, onChanged, onClose }: {
 
   useEffect(() => {
     db.from("incident_media").select("*").eq("incident_id", incident.id).then(async ({ data }: { data: { id: string; file_path: string; mime_type: string | null; kind: string }[] | null }) => {
-      const list = (data as { id: string; file_path: string; mime_type: string | null; kind: string }[]) ?? [];
+      const list = data ?? [];
       const withUrls = await Promise.all(list.map(async (m) => {
         const { data: signed } = await db.storage.from("incident-media").createSignedUrl(m.file_path, 60 * 30);
         return { ...m, url: signed?.signedUrl };

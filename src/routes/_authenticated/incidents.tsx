@@ -79,10 +79,12 @@ function IncidentsPage() {
 
   const filtered = useMemo(() => items.filter((i) => {
     if (tab !== "all" && i.status !== tab) return false;
+    if (severityFilter !== "all" && i.severity !== severityFilter) return false;
+    if (zoneFilter !== "all" && i.zone_id !== zoneFilter) return false;
     if (!q) return true;
     const s = q.toLowerCase();
     return i.title.toLowerCase().includes(s) || i.description.toLowerCase().includes(s);
-  }), [items, tab, q]);
+  }), [items, tab, q, severityFilter, zoneFilter]);
 
   const counts = useMemo(() => ({
     total: items.length,
@@ -125,10 +127,35 @@ function IncidentsPage() {
         <KpiCard label="Resolved" value={counts.resolved} icon={CheckCircle2} tone="text-success" />
       </div>
 
+      {showMap && filtered.some((i) => i.location_lat != null) && (
+        <Card className="mt-6"><CardContent className="p-4 sm:p-6">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="font-display text-lg font-semibold flex items-center gap-2"><MapIcon className="h-4 w-4" /> Incident Map</h2>
+            <Button size="sm" variant="ghost" onClick={() => setShowMap(false)}>Hide</Button>
+          </div>
+          <IncidentMap incidents={filtered} onSelect={setSelected} />
+        </CardContent></Card>
+      )}
+
       <Card className="mt-6">
         <CardContent className="p-4 sm:p-6">
-          <div className="flex flex-col sm:flex-row gap-3 mb-4">
+          <div className="flex flex-col sm:flex-row gap-3 mb-4 flex-wrap">
             <Input placeholder="Search incidents…" value={q} onChange={(e) => setQ(e.target.value)} className="sm:max-w-xs" />
+            <Select value={severityFilter} onValueChange={(v) => setSeverityFilter(v as typeof severityFilter)}>
+              <SelectTrigger className="sm:w-40"><SelectValue placeholder="Severity" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All severities</SelectItem>
+                {SEVERITIES.map((s) => <SelectItem key={s} value={s} className="capitalize">{s}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Select value={zoneFilter} onValueChange={setZoneFilter}>
+              <SelectTrigger className="sm:w-56"><SelectValue placeholder="Zone" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All zones</SelectItem>
+                {zones.map((z) => <SelectItem key={z.id} value={z.id}>{z.code} — {z.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            {!showMap && <Button size="sm" variant="outline" onClick={() => setShowMap(true)}><MapIcon className="h-4 w-4 mr-1.5" />Show map</Button>}
             <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)}>
               <TabsList>
                 <TabsTrigger value="all">All</TabsTrigger>
@@ -136,6 +163,7 @@ function IncidentsPage() {
               </TabsList>
             </Tabs>
           </div>
+
 
           <div className="overflow-x-auto">
             <Table>

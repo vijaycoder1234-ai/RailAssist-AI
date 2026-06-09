@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useMemo, useState, type ReactNode
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
-export type AppRole = "super_admin" | "inspector";
+export type AppRole = "super_admin" | "inspector" | "maintenance";
 export type InspectorStatus = "pending" | "approved" | "rejected" | "suspended";
 
 export interface AuthProfile {
@@ -28,6 +28,7 @@ interface AuthCtx {
   roles: AppRole[];
   isSuperAdmin: boolean;
   isInspector: boolean;
+  isMaintenance: boolean;
   inspector: InspectorRecord | null;
   refresh: () => Promise<void>;
   signOut: () => Promise<void>;
@@ -103,6 +104,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       roles,
       isSuperAdmin: roles.includes("super_admin"),
       isInspector: roles.includes("inspector"),
+      isMaintenance: roles.includes("maintenance"),
       inspector,
       refresh: async () => {
         if (user) await loadProfile(user.id);

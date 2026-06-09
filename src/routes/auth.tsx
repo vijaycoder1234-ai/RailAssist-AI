@@ -32,7 +32,7 @@ interface Zone { id: string; name: string; code: string }
 function AuthPage() {
   const search = Route.useSearch();
   const navigate = useNavigate();
-  const { user, loading, isSuperAdmin, isInspector, inspector } = useAuth();
+  const { user, loading, isSuperAdmin, isInspector, isMaintenance, inspector } = useAuth();
   const [tab, setTab] = useState<"login" | "register">(search.tab ?? "login");
   const [zones, setZones] = useState<Zone[]>([]);
 
@@ -46,9 +46,11 @@ function AuthPage() {
   useEffect(() => {
     if (loading || !user) return;
     if (isSuperAdmin) navigate({ to: "/admin" });
-    else if (isInspector && inspector?.status === "approved") navigate({ to: "/dashboard" });
+    else if (inspector?.status !== "approved") navigate({ to: "/auth/pending" });
+    else if (isMaintenance) navigate({ to: "/maintenance" });
+    else if (isInspector) navigate({ to: "/dashboard" });
     else navigate({ to: "/auth/pending" });
-  }, [loading, user, isSuperAdmin, isInspector, inspector, navigate]);
+  }, [loading, user, isSuperAdmin, isInspector, isMaintenance, inspector, navigate]);
 
   return (
     <div className="relative min-h-screen flex items-center justify-center bg-background px-4 py-10">
@@ -124,6 +126,7 @@ function LoginForm() {
 }
 
 const registerSchema = z.object({
+  role: z.enum(["inspector", "maintenance"]),
   full_name: z.string().trim().min(2, "Enter your full name").max(120),
   email: z.string().trim().email("Enter a valid email").max(255),
   password: z.string().min(8, "Password must be at least 8 characters").max(72),
@@ -135,6 +138,7 @@ const registerSchema = z.object({
 
 function RegisterForm({ zones, onSuccess }: { zones: Zone[]; onSuccess: () => void }) {
   const [form, setForm] = useState({
+    role: "inspector" as "inspector" | "maintenance",
     full_name: "", email: "", password: "",
     employee_id: "", phone: "", designation: "", zone_id: "",
   });
@@ -158,6 +162,7 @@ function RegisterForm({ zones, onSuccess }: { zones: Zone[]; onSuccess: () => vo
       options: {
         emailRedirectTo: redirectUrl,
         data: {
+          role: parsed.data.role,
           full_name: parsed.data.full_name,
           employee_id: parsed.data.employee_id,
           phone: parsed.data.phone,
@@ -178,6 +183,16 @@ function RegisterForm({ zones, onSuccess }: { zones: Zone[]; onSuccess: () => vo
   return (
     <form onSubmit={submit} className="space-y-3">
       <div className="grid grid-cols-2 gap-3">
+        <div className="col-span-2">
+          <Label>Register as</Label>
+          <Select value={form.role} onValueChange={(v) => setForm((f) => ({ ...f, role: v as "inspector" | "maintenance" }))}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="inspector">Railway Inspector</SelectItem>
+              <SelectItem value="maintenance">Maintenance Team</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
         <div className="col-span-2">
           <Label>Full name</Label>
           <Input required value={form.full_name} onChange={set("full_name")} />

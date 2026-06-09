@@ -66,17 +66,23 @@ risk_score is 0-100 (higher = more dangerous). Return JSON only, no prose.`;
 
     const sev = (["low", "medium", "high", "critical"] as const).includes(parsed.severity) ? parsed.severity : "medium";
 
-    await context.supabase.from("incidents").update({
+    const db = context.supabase as unknown as {
+      from: (t: string) => {
+        update: (v: Record<string, unknown>) => { eq: (c: string, v: string) => Promise<unknown> };
+        insert: (v: Record<string, unknown>) => Promise<unknown>;
+      };
+    };
+    await db.from("incidents").update({
       ai_summary: parsed.summary,
       ai_severity: sev,
       ai_suggested_actions: (parsed.suggested_actions ?? []).join("\n• "),
       ai_categories: parsed.categories ?? [],
     }).eq("id", data.incident_id);
 
-    await context.supabase.from("ai_runs").insert({
+    await db.from("ai_runs").insert({
       incident_id: data.incident_id,
       model: "google/gemini-3-flash-preview",
-      output: parsed as unknown as Record<string, unknown>,
+      output: parsed,
       created_by: context.userId,
     });
 

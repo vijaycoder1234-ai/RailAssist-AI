@@ -16,6 +16,7 @@ import { Route as AboutRouteImport } from './routes/about'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthPendingRouteImport } from './routes/auth.pending'
+import { Route as AuthenticatedStationsRouteImport } from './routes/_authenticated/stations'
 import { Route as AuthenticatedMaintenanceRouteImport } from './routes/_authenticated/maintenance'
 import { Route as AuthenticatedIncidentsRouteImport } from './routes/_authenticated/incidents'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
@@ -56,6 +57,11 @@ const AuthPendingRoute = AuthPendingRouteImport.update({
   id: '/pending',
   path: '/pending',
   getParentRoute: () => AuthRoute,
+} as any)
+const AuthenticatedStationsRoute = AuthenticatedStationsRouteImport.update({
+  id: '/stations',
+  path: '/stations',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedMaintenanceRoute =
   AuthenticatedMaintenanceRouteImport.update({
@@ -101,6 +107,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/incidents': typeof AuthenticatedIncidentsRoute
   '/maintenance': typeof AuthenticatedMaintenanceRoute
+  '/stations': typeof AuthenticatedStationsRoute
   '/auth/pending': typeof AuthPendingRoute
 }
 export interface FileRoutesByTo {
@@ -115,6 +122,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/incidents': typeof AuthenticatedIncidentsRoute
   '/maintenance': typeof AuthenticatedMaintenanceRoute
+  '/stations': typeof AuthenticatedStationsRoute
   '/auth/pending': typeof AuthPendingRoute
 }
 export interface FileRoutesById {
@@ -131,6 +139,7 @@ export interface FileRoutesById {
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/incidents': typeof AuthenticatedIncidentsRoute
   '/_authenticated/maintenance': typeof AuthenticatedMaintenanceRoute
+  '/_authenticated/stations': typeof AuthenticatedStationsRoute
   '/auth/pending': typeof AuthPendingRoute
 }
 export interface FileRouteTypes {
@@ -147,6 +156,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/incidents'
     | '/maintenance'
+    | '/stations'
     | '/auth/pending'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -161,6 +171,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/incidents'
     | '/maintenance'
+    | '/stations'
     | '/auth/pending'
   id:
     | '__root__'
@@ -176,6 +187,7 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard'
     | '/_authenticated/incidents'
     | '/_authenticated/maintenance'
+    | '/_authenticated/stations'
     | '/auth/pending'
   fileRoutesById: FileRoutesById
 }
@@ -239,6 +251,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthPendingRouteImport
       parentRoute: typeof AuthRoute
     }
+    '/_authenticated/stations': {
+      id: '/_authenticated/stations'
+      path: '/stations'
+      fullPath: '/stations'
+      preLoaderRoute: typeof AuthenticatedStationsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/maintenance': {
       id: '/_authenticated/maintenance'
       path: '/maintenance'
@@ -291,6 +310,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedIncidentsRoute: typeof AuthenticatedIncidentsRoute
   AuthenticatedMaintenanceRoute: typeof AuthenticatedMaintenanceRoute
+  AuthenticatedStationsRoute: typeof AuthenticatedStationsRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -300,6 +320,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedIncidentsRoute: AuthenticatedIncidentsRoute,
   AuthenticatedMaintenanceRoute: AuthenticatedMaintenanceRoute,
+  AuthenticatedStationsRoute: AuthenticatedStationsRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =

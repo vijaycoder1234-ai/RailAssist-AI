@@ -173,23 +173,25 @@ function HomePage() {
                   <div className="h-2 w-2 rounded-full bg-success animate-pulse" />
                   <span className="text-sm font-medium">Live Safety Score</span>
                 </div>
-                <Badge variant="secondary">Northern Zone</Badge>
+                <Badge variant="secondary">All Zones</Badge>
               </div>
               <div className="mt-6 text-center">
-                <div className="font-display text-6xl font-bold text-gradient-rail">94.2</div>
-                <div className="mt-1 text-sm text-muted-foreground">out of 100</div>
+                <div className="font-display text-6xl font-bold text-gradient-rail">
+                  {Math.max(0, 100 - stats.critical * 5 - Math.max(0, stats.incidents - stats.resolved)).toFixed(1)}
+                </div>
+                <div className="mt-1 text-sm text-muted-foreground">out of 100 · live safety index</div>
               </div>
               <div className="mt-6 grid grid-cols-3 gap-3 text-center text-xs">
                 <div className="rounded-lg bg-secondary/60 p-3">
-                  <div className="font-display text-xl font-bold">128</div>
+                  <div className="font-display text-xl font-bold">{Math.max(0, stats.incidents - stats.resolved)}</div>
                   <div className="text-muted-foreground">Active</div>
                 </div>
                 <div className="rounded-lg bg-destructive/10 p-3">
-                  <div className="font-display text-xl font-bold text-destructive">6</div>
+                  <div className="font-display text-xl font-bold text-destructive">{stats.critical}</div>
                   <div className="text-muted-foreground">Critical</div>
                 </div>
                 <div className="rounded-lg bg-success/10 p-3">
-                  <div className="font-display text-xl font-bold text-success">412</div>
+                  <div className="font-display text-xl font-bold text-success">{stats.resolved}</div>
                   <div className="text-muted-foreground">Resolved</div>
                 </div>
               </div>

@@ -55,7 +55,7 @@ const features = [
   { icon: BarChart3, title: "Analytics & Reports", desc: "KPIs, trends, zone performance, PDF / Excel / CSV exports." },
 ];
 
-const stats = [
+const staticStats = [
   { value: "70K+", label: "Track km in India" },
   { value: "8,300+", label: "Stations" },
   { value: "17", label: "Zonal railways" },
@@ -79,6 +79,13 @@ const benefits = [
 ];
 
 function HomePage() {
+  const stats = Route.useLoaderData();
+  const liveStats = [
+    { value: stats.incidents.toLocaleString(), label: "Incidents reported" },
+    { value: stats.resolved.toLocaleString(), label: "Incidents resolved" },
+    { value: stats.inspectors.toLocaleString(), label: "Active inspectors" },
+    { value: `${stats.resolutionRate}%`, label: "Resolution rate" },
+  ];
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <SiteHeader />

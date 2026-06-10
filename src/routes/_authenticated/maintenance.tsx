@@ -37,6 +37,7 @@ interface Task {
   after_photos: string[] | null;
   completion_report: string | null;
   remarks: string | null;
+  notes: string | null;
   created_at: string;
 }
 

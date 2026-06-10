@@ -212,6 +212,7 @@ function IncidentsPage() {
           <IncidentDetailDialog
             incident={selected}
             canManage={isSuperAdmin || selected.reporter_id === user?.id}
+            isSuperAdmin={isSuperAdmin}
             onChanged={() => { load(); }}
             onClose={() => setSelected(null)}
           />
@@ -351,8 +352,8 @@ function NewIncidentDialog({ reporterId, zoneId, onCreated }: { reporterId: stri
   );
 }
 
-function IncidentDetailDialog({ incident, canManage, onChanged, onClose }: {
-  incident: IncidentRow; canManage: boolean; onChanged: () => void; onClose: () => void;
+function IncidentDetailDialog({ incident, canManage, isSuperAdmin, onChanged, onClose }: {
+  incident: IncidentRow; canManage: boolean; isSuperAdmin: boolean; onChanged: () => void; onClose: () => void;
 }) {
   const [status, setStatus] = useState<IncidentStatus>(incident.status);
   const [analyzing, setAnalyzing] = useState(false);

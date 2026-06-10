@@ -123,7 +123,7 @@ function HomePage() {
 
           {/* stat strip */}
           <div className="mt-16 grid grid-cols-2 gap-3 sm:grid-cols-4">
-            {stats.map((s) => (
+            {liveStats.map((s) => (
               <Card key={s.label} className="glass">
                 <CardContent className="p-5 text-center">
                   <div className="font-display text-2xl sm:text-3xl font-bold text-gradient-rail">
@@ -132,6 +132,13 @@ function HomePage() {
                   <div className="mt-1 text-xs sm:text-sm text-muted-foreground">{s.label}</div>
                 </CardContent>
               </Card>
+            ))}
+          </div>
+          <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {staticStats.map((s) => (
+              <div key={s.label} className="text-center text-xs text-muted-foreground">
+                <span className="font-semibold text-foreground">{s.value}</span> {s.label}
+              </div>
             ))}
           </div>
         </div>

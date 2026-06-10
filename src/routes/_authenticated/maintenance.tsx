@@ -13,7 +13,8 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/use-auth";
 import { db, type IncidentRow } from "@/lib/db";
 import { notifyUser, ensureNotificationPermission } from "@/lib/notifications";
-import { Wrench, ImagePlus, Loader2, CheckCircle2, Clock, Activity } from "lucide-react";
+import { downloadMaintenancePdf } from "@/lib/incident-pdf";
+import { Wrench, ImagePlus, Loader2, CheckCircle2, Clock, Activity, Download } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/maintenance")({
   head: () => ({ meta: [{ title: "Maintenance Dashboard — RailAssist AI" }] }),
@@ -304,7 +305,10 @@ function TaskDialog({ task, incident, userId, onChanged, onClose }: {
           <Card className="border-success/40 bg-success/5"><CardContent className="p-3 text-sm">Task verified and closed. {task.remarks ? `Admin notes: ${task.remarks}` : ""}</CardContent></Card>
         )}
       </div>
-      <DialogFooter>
+      <DialogFooter className="gap-2 sm:gap-2">
+        <Button variant="outline" size="sm" onClick={() => downloadMaintenancePdf(task, incident)}>
+          <Download className="h-4 w-4 mr-1.5" /> Download work order PDF
+        </Button>
         <Button variant="ghost" onClick={onClose}>Close</Button>
       </DialogFooter>
     </DialogContent>

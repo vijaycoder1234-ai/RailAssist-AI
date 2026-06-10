@@ -212,6 +212,7 @@ function IncidentsPage() {
           <IncidentDetailDialog
             incident={selected}
             canManage={isSuperAdmin || selected.reporter_id === user?.id}
+            isSuperAdmin={isSuperAdmin}
             onChanged={() => { load(); }}
             onClose={() => setSelected(null)}
           />
@@ -351,8 +352,8 @@ function NewIncidentDialog({ reporterId, zoneId, onCreated }: { reporterId: stri
   );
 }
 
-function IncidentDetailDialog({ incident, canManage, onChanged, onClose }: {
-  incident: IncidentRow; canManage: boolean; onChanged: () => void; onClose: () => void;
+function IncidentDetailDialog({ incident, canManage, isSuperAdmin, onChanged, onClose }: {
+  incident: IncidentRow; canManage: boolean; isSuperAdmin: boolean; onChanged: () => void; onClose: () => void;
 }) {
   const [status, setStatus] = useState<IncidentStatus>(incident.status);
   const [analyzing, setAnalyzing] = useState(false);
@@ -457,18 +458,124 @@ function IncidentDetailDialog({ incident, canManage, onChanged, onClose }: {
           </CardContent>
         </Card>
 
-        {canManage && (
-          <div className="flex items-center gap-2">
-            <Select value={status} onValueChange={(v) => setStatus(v as IncidentStatus)}>
-              <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
-              <SelectContent>{STATUSES.map((s) => <SelectItem key={s} value={s} className="capitalize">{s.replace("_", " ")}</SelectItem>)}</SelectContent>
-            </Select>
-            <Button onClick={saveStatus} size="sm">Update status</Button>
-            <Button variant="ghost" size="sm" onClick={onClose}>Close</Button>
-          </div>
+        {isSuperAdmin && (
+          <AssignMaintenanceCard incident={current} onAssigned={onChanged} />
         )}
+
+        <div className="flex items-center gap-2 flex-wrap">
+          {canManage && (
+            <>
+              <Select value={status} onValueChange={(v) => setStatus(v as IncidentStatus)}>
+                <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
+                <SelectContent>{STATUSES.map((s) => <SelectItem key={s} value={s} className="capitalize">{s.replace("_", " ")}</SelectItem>)}</SelectContent>
+              </Select>
+              <Button onClick={saveStatus} size="sm">Update status</Button>
+            </>
+          )}
+          <Button variant="outline" size="sm" onClick={() => downloadIncidentPdf(current)}>
+            <Download className="h-4 w-4 mr-1.5" /> Download PDF
+          </Button>
+          <Button variant="ghost" size="sm" onClick={onClose}>Close</Button>
+        </div>
       </div>
     </DialogContent>
+  );
+}
+
+function AssignMaintenanceCard({ incident, onAssigned }: { incident: IncidentRow; onAssigned: () => void }) {
+  const [team, setTeam] = useState<{ id: string; user_id: string; full_name: string; email: string }[]>([]);
+  const [existing, setExisting] = useState<{ id: string; assigned_to: string; status: string; priority: string } | null>(null);
+  const [assignee, setAssignee] = useState<string>("");
+  const [priority, setPriority] = useState<"low" | "medium" | "high" | "critical">(incident.severity);
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    db.from("inspectors").select("id, user_id, full_name, email")
+      .eq("status", "approved")
+      .order("full_name")
+      .then(async ({ data }: { data: { id: string; user_id: string; full_name: string; email: string }[] | null }) => {
+        const list = data ?? [];
+        if (!list.length) { setTeam([]); return; }
+        const { data: roles } = await db.from("user_roles").select("user_id, role").in("user_id", list.map((i) => i.user_id));
+        const maintIds = new Set(((roles ?? []) as { user_id: string; role: string }[]).filter((r) => r.role === "maintenance").map((r) => r.user_id));
+        setTeam(list.filter((i) => maintIds.has(i.user_id)));
+      });
+    db.from("maintenance_tasks").select("id, assigned_to, status, priority")
+      .eq("incident_id", incident.id).maybeSingle()
+      .then(({ data }: { data: { id: string; assigned_to: string; status: string; priority: string } | null }) => {
+        setExisting(data);
+        if (data) { setAssignee(data.assigned_to); setPriority(data.priority as typeof priority); }
+      });
+  }, [incident.id]);
+
+  const assign = async () => {
+    if (!assignee) { toast.error("Pick a team member"); return; }
+    setBusy(true);
+    try {
+      const { data: me } = await db.auth.getUser();
+      if (existing) {
+        const { error } = await db.from("maintenance_tasks")
+          .update({ assigned_to: assignee, priority, status: "assigned" })
+          .eq("id", existing.id);
+        if (error) throw error;
+      } else {
+        const { error } = await db.from("maintenance_tasks").insert({
+          incident_id: incident.id,
+          assigned_to: assignee,
+          assigned_by: me.user?.id ?? null,
+          priority,
+          status: "assigned",
+        });
+        if (error) throw error;
+        await db.from("incidents").update({ status: "triaged", assigned_to: assignee }).eq("id", incident.id);
+      }
+      await notifyUser({
+        user_id: assignee,
+        type: "task_assigned",
+        title: `New ${priority} priority work order`,
+        body: incident.title,
+        link: "/maintenance",
+      });
+      showBrowserNotification("Work order assigned", incident.title, "/maintenance");
+      toast.success("Assigned to maintenance team");
+      onAssigned();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not assign");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Card className="border-safety/30 bg-safety/5">
+      <CardContent className="p-4 space-y-3">
+        <div className="flex items-center gap-2 font-semibold text-sm">
+          <Sparkles className="h-4 w-4 text-safety" /> Assign to Maintenance Team
+          {existing && <Badge variant="outline" className="capitalize">{existing.status.replace("_", " ")}</Badge>}
+        </div>
+        {team.length === 0 ? (
+          <p className="text-xs text-muted-foreground">No approved maintenance staff yet. Approve users with the maintenance role first.</p>
+        ) : (
+          <div className="flex flex-wrap gap-2">
+            <Select value={assignee} onValueChange={setAssignee}>
+              <SelectTrigger className="w-56"><SelectValue placeholder="Select team member" /></SelectTrigger>
+              <SelectContent>
+                {team.map((t) => <SelectItem key={t.user_id} value={t.user_id}>{t.full_name} · {t.email}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Select value={priority} onValueChange={(v) => setPriority(v as typeof priority)}>
+              <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {(["low", "medium", "high", "critical"] as const).map((p) => <SelectItem key={p} value={p} className="capitalize">{p}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Button size="sm" onClick={assign} disabled={busy}>
+              {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : existing ? "Reassign" : "Assign"}
+            </Button>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 

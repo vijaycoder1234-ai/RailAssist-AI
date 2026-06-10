@@ -17,6 +17,7 @@ import { SiteFooter } from "@/components/site-footer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { getPublicStats, type PublicStats } from "@/lib/public-stats.functions";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -34,6 +35,12 @@ export const Route = createFileRoute("/")({
       },
     ],
   }),
+  loader: async (): Promise<PublicStats> => {
+    try { return await getPublicStats(); }
+    catch { return { incidents: 0, resolved: 0, critical: 0, stations: 0, zones: 0, inspectors: 0, tasks: 0, resolutionRate: 0 }; }
+  },
+  errorComponent: ({ error }) => <div className="p-8 text-center text-sm text-destructive">{error.message}</div>,
+  notFoundComponent: () => <div className="p-8 text-center text-sm">Not found.</div>,
   component: HomePage,
 });
 
@@ -48,7 +55,7 @@ const features = [
   { icon: BarChart3, title: "Analytics & Reports", desc: "KPIs, trends, zone performance, PDF / Excel / CSV exports." },
 ];
 
-const stats = [
+const staticStats = [
   { value: "70K+", label: "Track km in India" },
   { value: "8,300+", label: "Stations" },
   { value: "17", label: "Zonal railways" },
@@ -72,6 +79,13 @@ const benefits = [
 ];
 
 function HomePage() {
+  const stats = Route.useLoaderData();
+  const liveStats = [
+    { value: stats.incidents.toLocaleString(), label: "Incidents reported" },
+    { value: stats.resolved.toLocaleString(), label: "Incidents resolved" },
+    { value: stats.inspectors.toLocaleString(), label: "Active inspectors" },
+    { value: `${stats.resolutionRate}%`, label: "Resolution rate" },
+  ];
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <SiteHeader />
@@ -109,7 +123,7 @@ function HomePage() {
 
           {/* stat strip */}
           <div className="mt-16 grid grid-cols-2 gap-3 sm:grid-cols-4">
-            {stats.map((s) => (
+            {liveStats.map((s) => (
               <Card key={s.label} className="glass">
                 <CardContent className="p-5 text-center">
                   <div className="font-display text-2xl sm:text-3xl font-bold text-gradient-rail">
@@ -118,6 +132,13 @@ function HomePage() {
                   <div className="mt-1 text-xs sm:text-sm text-muted-foreground">{s.label}</div>
                 </CardContent>
               </Card>
+            ))}
+          </div>
+          <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {staticStats.map((s) => (
+              <div key={s.label} className="text-center text-xs text-muted-foreground">
+                <span className="font-semibold text-foreground">{s.value}</span> {s.label}
+              </div>
             ))}
           </div>
         </div>
@@ -152,23 +173,25 @@ function HomePage() {
                   <div className="h-2 w-2 rounded-full bg-success animate-pulse" />
                   <span className="text-sm font-medium">Live Safety Score</span>
                 </div>
-                <Badge variant="secondary">Northern Zone</Badge>
+                <Badge variant="secondary">All Zones</Badge>
               </div>
               <div className="mt-6 text-center">
-                <div className="font-display text-6xl font-bold text-gradient-rail">94.2</div>
-                <div className="mt-1 text-sm text-muted-foreground">out of 100</div>
+                <div className="font-display text-6xl font-bold text-gradient-rail">
+                  {Math.max(0, 100 - stats.critical * 5 - Math.max(0, stats.incidents - stats.resolved)).toFixed(1)}
+                </div>
+                <div className="mt-1 text-sm text-muted-foreground">out of 100 · live safety index</div>
               </div>
               <div className="mt-6 grid grid-cols-3 gap-3 text-center text-xs">
                 <div className="rounded-lg bg-secondary/60 p-3">
-                  <div className="font-display text-xl font-bold">128</div>
+                  <div className="font-display text-xl font-bold">{Math.max(0, stats.incidents - stats.resolved)}</div>
                   <div className="text-muted-foreground">Active</div>
                 </div>
                 <div className="rounded-lg bg-destructive/10 p-3">
-                  <div className="font-display text-xl font-bold text-destructive">6</div>
+                  <div className="font-display text-xl font-bold text-destructive">{stats.critical}</div>
                   <div className="text-muted-foreground">Critical</div>
                 </div>
                 <div className="rounded-lg bg-success/10 p-3">
-                  <div className="font-display text-xl font-bold text-success">412</div>
+                  <div className="font-display text-xl font-bold text-success">{stats.resolved}</div>
                   <div className="text-muted-foreground">Resolved</div>
                 </div>
               </div>

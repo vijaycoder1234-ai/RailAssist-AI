@@ -1,21 +1,32 @@
-// Browser notifications + persisted notification record helper
+// Browser notifications + persisted in-app notification helpers
 import { db } from "@/lib/db";
 
-export async function ensureNotificationPermission(): Promise<NotificationPermission> {
-  if (typeof window === "undefined" || !("Notification" in window)) return "denied";
-  if (Notification.permission === "granted" || Notification.permission === "denied") {
-    return Notification.permission;
-  }
+export type PermissionState = "granted" | "denied" | "default" | "unsupported";
+
+export function getNotificationPermission(): PermissionState {
+  if (typeof window === "undefined" || !("Notification" in window)) return "unsupported";
+  return Notification.permission as PermissionState;
+}
+
+export async function requestNotificationPermission(): Promise<PermissionState> {
+  if (typeof window === "undefined" || !("Notification" in window)) return "unsupported";
+  if (Notification.permission !== "default") return Notification.permission as PermissionState;
   try {
-    return await Notification.requestPermission();
+    const res = await Notification.requestPermission();
+    return res as PermissionState;
   } catch {
     return "denied";
   }
 }
 
+/** Backwards-compatible: silently checks/asks but never throws. */
+export async function ensureNotificationPermission(): Promise<PermissionState> {
+  return requestNotificationPermission();
+}
+
 export function showBrowserNotification(title: string, body?: string, link?: string) {
-  if (typeof window === "undefined" || !("Notification" in window)) return;
-  if (Notification.permission !== "granted") return;
+  if (typeof window === "undefined" || !("Notification" in window)) return false;
+  if (Notification.permission !== "granted") return false;
   try {
     const n = new Notification(title, { body, icon: "/favicon.ico", tag: link ?? title });
     if (link) {
@@ -24,8 +35,10 @@ export function showBrowserNotification(title: string, body?: string, link?: str
         window.location.href = link;
       };
     }
+    return true;
   } catch (e) {
     console.warn("notification failed", e);
+    return false;
   }
 }
 
@@ -37,6 +50,7 @@ export async function notifyUser(opts: {
   link?: string;
   showBrowser?: boolean;
 }) {
+  // Always persist in-app so the user sees it even when browser perms are denied.
   await db.from("notifications").insert({
     user_id: opts.user_id,
     type: opts.type,

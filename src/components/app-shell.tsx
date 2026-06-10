@@ -7,6 +7,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useAuth } from "@/hooks/use-auth";
+import { NotificationBell } from "@/components/notification-bell";
 
 interface NavItem { to: string; label: string; icon: typeof Train }
 
@@ -93,10 +94,13 @@ export function AppShell({ children, kind }: { children: ReactNode; kind: "inspe
               {kind === "admin" ? "Super Admin Console" : "Inspector Workspace"}
             </div>
           </div>
-          <div className="md:hidden">
-            <Button size="sm" variant="ghost" onClick={() => signOut().then(() => navigate({ to: "/" }))}>
-              <LogOut className="h-4 w-4" />
-            </Button>
+          <div className="flex items-center gap-1">
+            <NotificationBell />
+            <div className="md:hidden">
+              <Button size="sm" variant="ghost" onClick={() => signOut().then(() => navigate({ to: "/" }))}>
+                <LogOut className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </header>
         <div className="p-4 sm:p-6 lg:p-8">{children}</div>

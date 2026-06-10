@@ -12,4 +12,9 @@ export default defineConfig({
     // nitro/vite builds from this
     server: { entry: "server" },
   },
+  // Literal plugins array so wrangler's `cloudflare` auto-setup pattern-match succeeds.
+  // The Lovable wrapper merges this with its built-in plugin set.
+  vite: {
+    plugins: [],
+  },
 });

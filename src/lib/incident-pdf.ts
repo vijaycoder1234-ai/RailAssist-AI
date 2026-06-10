@@ -132,3 +132,95 @@ export async function downloadIncidentPdf(incident: IncidentRow) {
 
   doc.save(`incident-${incident.id.slice(0, 8)}.pdf`);
 }
+
+interface MaintenanceTaskForPdf {
+  id: string;
+  incident_id: string;
+  priority: string;
+  status: string;
+  due_at: string | null;
+  accepted_at: string | null;
+  started_at: string | null;
+  completed_at: string | null;
+  completion_report: string | null;
+  remarks: string | null;
+  notes: string | null;
+  created_at: string;
+}
+
+export async function downloadMaintenancePdf(task: MaintenanceTaskForPdf, incident?: IncidentRow | null) {
+  const doc = new jsPDF({ unit: "pt", format: "a4" });
+  const pageW = doc.internal.pageSize.getWidth();
+  const pageH = doc.internal.pageSize.getHeight();
+  const margin = 40;
+  let y = margin;
+  const ensureSpace = (h: number) => { if (y + h > pageH - margin) { doc.addPage(); y = margin; } };
+  const text = (s: string, size = 10, bold = false) => {
+    doc.setFontSize(size);
+    doc.setFont("helvetica", bold ? "bold" : "normal");
+    const lines = doc.splitTextToSize(s, pageW - margin * 2);
+    ensureSpace(lines.length * size * 1.25);
+    doc.text(lines, margin, y);
+    y += lines.length * size * 1.25 + 4;
+  };
+  const sectionTitle = (s: string) => {
+    ensureSpace(28);
+    doc.setDrawColor(30, 64, 175); doc.setLineWidth(2);
+    doc.line(margin, y, margin + 24, y); y += 8;
+    text(s, 13, true);
+  };
+
+  // Header
+  doc.setFillColor(15, 23, 42);
+  doc.rect(0, 0, pageW, 80, "F");
+  doc.setTextColor(255, 255, 255);
+  doc.setFont("helvetica", "bold"); doc.setFontSize(20);
+  doc.text("RailAssist AI", margin, 38);
+  doc.setFontSize(11); doc.setFont("helvetica", "normal");
+  doc.text("Maintenance Work Order", margin, 60);
+  doc.setFontSize(9);
+  doc.text(`Generated ${new Date().toLocaleString()}`, pageW - margin, 60, { align: "right" });
+  doc.setTextColor(0, 0, 0);
+  y = 110;
+
+  text(incident?.title ?? "Maintenance Task", 16, true);
+  text(
+    `Task ID: ${task.id.slice(0, 8)}    Priority: ${task.priority.toUpperCase()}    Status: ${task.status.replace("_", " ")}`,
+    9,
+  );
+  text(
+    `Assigned: ${new Date(task.created_at).toLocaleString()}` +
+      (task.due_at ? `    Due: ${new Date(task.due_at).toLocaleString()}` : ""),
+    9,
+  );
+  y += 4;
+
+  if (incident) {
+    sectionTitle("Incident Details");
+    text(incident.description);
+    text(
+      `Category: ${incident.category}   Severity: ${incident.severity.toUpperCase()}` +
+      (incident.location_text ? `   Location: ${incident.location_text}` : ""),
+      9,
+    );
+  }
+
+  sectionTitle("Work Order Timeline");
+  text(`Created:    ${new Date(task.created_at).toLocaleString()}`);
+  text(`Accepted:   ${task.accepted_at ? new Date(task.accepted_at).toLocaleString() : "—"}`);
+  text(`Started:    ${task.started_at ? new Date(task.started_at).toLocaleString() : "—"}`);
+  text(`Completed:  ${task.completed_at ? new Date(task.completed_at).toLocaleString() : "—"}`);
+
+  if (task.notes) { sectionTitle("Notes"); text(task.notes); }
+  if (task.completion_report) { sectionTitle("Completion Report"); text(task.completion_report); }
+  if (task.remarks) { sectionTitle("Admin Remarks"); text(task.remarks); }
+
+  const pages = doc.getNumberOfPages();
+  for (let i = 1; i <= pages; i++) {
+    doc.setPage(i);
+    doc.setFontSize(8); doc.setTextColor(120);
+    doc.text(`Page ${i} of ${pages} — RailAssist AI work order`, pageW / 2, pageH - 20, { align: "center" });
+  }
+  doc.save(`work-order-${task.id.slice(0, 8)}.pdf`);
+}
+

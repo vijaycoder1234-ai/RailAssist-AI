@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/hooks/use-auth";
 import { db, type IncidentRow, type IncidentSeverity, type IncidentStatus, type IncidentCategory } from "@/lib/db";
 import { analyzeIncident } from "@/lib/ai-incident.functions";
@@ -22,6 +23,7 @@ import { ensureNotificationPermission, showBrowserNotification, notifyUser } fro
 import { IncidentMap } from "@/components/incident-map";
 import {
   AlertTriangle, Plus, MapPin, Sparkles, ImagePlus, Loader2, CheckCircle2, Clock, Activity, Download, Map as MapIcon,
+  Inbox, RefreshCw,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/incidents")({
@@ -46,6 +48,7 @@ function IncidentsPage() {
   const [items, setItems] = useState<IncidentRow[]>([]);
   const [zones, setZones] = useState<{ id: string; name: string; code: string }[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [tab, setTab] = useState<"all" | IncidentStatus>("all");
   const [q, setQ] = useState("");
   const [severityFilter, setSeverityFilter] = useState<"all" | IncidentSeverity>("all");
@@ -69,8 +72,12 @@ function IncidentsPage() {
 
   const load = async () => {
     setLoading(true);
+    setLoadError(null);
     const { data, error } = await db.from("incidents").select("*").order("created_at", { ascending: false }).limit(200);
-    if (error) toast.error(error.message);
+    if (error) {
+      setLoadError(error.message);
+      toast.error(error.message);
+    }
     setItems((data as IncidentRow[]) ?? []);
     setLoading(false);
   };
@@ -178,13 +185,42 @@ function IncidentsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {loading && <TableRow><TableCell colSpan={6} className="text-center text-sm text-muted-foreground py-8">Loading…</TableCell></TableRow>}
-                {!loading && filtered.length === 0 && (
-                  <TableRow><TableCell colSpan={6} className="text-center text-sm text-muted-foreground py-8">
-                    No incidents yet. Report your first one to get AI-powered analysis.
+                {loading && Array.from({ length: 5 }).map((_, idx) => (
+                  <TableRow key={`sk-${idx}`}>
+                    <TableCell><Skeleton className="h-4 w-48 mb-1.5" /><Skeleton className="h-3 w-64" /></TableCell>
+                    <TableCell><Skeleton className="h-4 w-20" /></TableCell>
+                    <TableCell><Skeleton className="h-5 w-16 rounded-full" /></TableCell>
+                    <TableCell><Skeleton className="h-5 w-20 rounded-full" /></TableCell>
+                    <TableCell><Skeleton className="h-4 w-28" /></TableCell>
+                    <TableCell><Skeleton className="h-7 w-14 ml-auto" /></TableCell>
+                  </TableRow>
+                ))}
+                {!loading && loadError && (
+                  <TableRow><TableCell colSpan={6} className="py-10">
+                    <div className="flex flex-col items-center gap-3 text-center">
+                      <AlertTriangle className="h-8 w-8 text-destructive" />
+                      <div className="text-sm font-medium">Couldn't load incidents</div>
+                      <div className="text-xs text-muted-foreground max-w-md">{loadError}</div>
+                      <Button size="sm" variant="outline" onClick={load}><RefreshCw className="h-3.5 w-3.5 mr-1.5" />Retry</Button>
+                    </div>
                   </TableCell></TableRow>
                 )}
-                {filtered.map((i) => (
+                {!loading && !loadError && filtered.length === 0 && (
+                  <TableRow><TableCell colSpan={6} className="py-12">
+                    <div className="flex flex-col items-center gap-3 text-center">
+                      <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center">
+                        <Inbox className="h-6 w-6 text-muted-foreground" />
+                      </div>
+                      <div className="text-sm font-medium">No incidents match your filters</div>
+                      <div className="text-xs text-muted-foreground max-w-md">
+                        {items.length === 0
+                          ? "Report your first incident to get AI-powered analysis and routing."
+                          : "Try clearing filters or switching tabs."}
+                      </div>
+                    </div>
+                  </TableCell></TableRow>
+                )}
+                {!loading && filtered.map((i) => (
                   <TableRow key={i.id} className="cursor-pointer" onClick={() => setSelected(i)}>
                     <TableCell>
                       <div className="font-medium">{i.title}</div>

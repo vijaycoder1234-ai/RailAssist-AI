@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { getPublicStats, type PublicStats } from "@/lib/public-stats.functions";
+import { useCountUp } from "@/hooks/use-count-up";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -80,11 +81,15 @@ const benefits = [
 
 function HomePage() {
   const stats = Route.useLoaderData();
+  const incCount = useCountUp(stats.incidents);
+  const resCount = useCountUp(stats.resolved);
+  const inspCount = useCountUp(stats.inspectors);
+  const rateCount = useCountUp(stats.resolutionRate, 1400, 1);
   const liveStats = [
-    { value: stats.incidents.toLocaleString(), label: "Incidents reported" },
-    { value: stats.resolved.toLocaleString(), label: "Incidents resolved" },
-    { value: stats.inspectors.toLocaleString(), label: "Active inspectors" },
-    { value: `${stats.resolutionRate}%`, label: "Resolution rate" },
+    { value: incCount.toLocaleString(), label: "Incidents reported" },
+    { value: resCount.toLocaleString(), label: "Incidents resolved" },
+    { value: inspCount.toLocaleString(), label: "Active inspectors" },
+    { value: `${rateCount}%`, label: "Resolution rate" },
   ];
   return (
     <div className="min-h-screen flex flex-col bg-background">

@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/hooks/use-auth";
 import { db, type IncidentRow, type IncidentSeverity, type IncidentStatus, type IncidentCategory } from "@/lib/db";
 import { analyzeIncident } from "@/lib/ai-incident.functions";
@@ -22,6 +23,7 @@ import { ensureNotificationPermission, showBrowserNotification, notifyUser } fro
 import { IncidentMap } from "@/components/incident-map";
 import {
   AlertTriangle, Plus, MapPin, Sparkles, ImagePlus, Loader2, CheckCircle2, Clock, Activity, Download, Map as MapIcon,
+  Inbox, RefreshCw,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/incidents")({
@@ -46,6 +48,7 @@ function IncidentsPage() {
   const [items, setItems] = useState<IncidentRow[]>([]);
   const [zones, setZones] = useState<{ id: string; name: string; code: string }[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [tab, setTab] = useState<"all" | IncidentStatus>("all");
   const [q, setQ] = useState("");
   const [severityFilter, setSeverityFilter] = useState<"all" | IncidentSeverity>("all");
@@ -69,8 +72,12 @@ function IncidentsPage() {
 
   const load = async () => {
     setLoading(true);
+    setLoadError(null);
     const { data, error } = await db.from("incidents").select("*").order("created_at", { ascending: false }).limit(200);
-    if (error) toast.error(error.message);
+    if (error) {
+      setLoadError(error.message);
+      toast.error(error.message);
+    }
     setItems((data as IncidentRow[]) ?? []);
     setLoading(false);
   };
@@ -178,13 +185,42 @@ function IncidentsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {loading && <TableRow><TableCell colSpan={6} className="text-center text-sm text-muted-foreground py-8">Loading…</TableCell></TableRow>}
-                {!loading && filtered.length === 0 && (
-                  <TableRow><TableCell colSpan={6} className="text-center text-sm text-muted-foreground py-8">
-                    No incidents yet. Report your first one to get AI-powered analysis.
+                {loading && Array.from({ length: 5 }).map((_, idx) => (
+                  <TableRow key={`sk-${idx}`}>
+                    <TableCell><Skeleton className="h-4 w-48 mb-1.5" /><Skeleton className="h-3 w-64" /></TableCell>
+                    <TableCell><Skeleton className="h-4 w-20" /></TableCell>
+                    <TableCell><Skeleton className="h-5 w-16 rounded-full" /></TableCell>
+                    <TableCell><Skeleton className="h-5 w-20 rounded-full" /></TableCell>
+                    <TableCell><Skeleton className="h-4 w-28" /></TableCell>
+                    <TableCell><Skeleton className="h-7 w-14 ml-auto" /></TableCell>
+                  </TableRow>
+                ))}
+                {!loading && loadError && (
+                  <TableRow><TableCell colSpan={6} className="py-10">
+                    <div className="flex flex-col items-center gap-3 text-center">
+                      <AlertTriangle className="h-8 w-8 text-destructive" />
+                      <div className="text-sm font-medium">Couldn't load incidents</div>
+                      <div className="text-xs text-muted-foreground max-w-md">{loadError}</div>
+                      <Button size="sm" variant="outline" onClick={load}><RefreshCw className="h-3.5 w-3.5 mr-1.5" />Retry</Button>
+                    </div>
                   </TableCell></TableRow>
                 )}
-                {filtered.map((i) => (
+                {!loading && !loadError && filtered.length === 0 && (
+                  <TableRow><TableCell colSpan={6} className="py-12">
+                    <div className="flex flex-col items-center gap-3 text-center">
+                      <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center">
+                        <Inbox className="h-6 w-6 text-muted-foreground" />
+                      </div>
+                      <div className="text-sm font-medium">No incidents match your filters</div>
+                      <div className="text-xs text-muted-foreground max-w-md">
+                        {items.length === 0
+                          ? "Report your first incident to get AI-powered analysis and routing."
+                          : "Try clearing filters or switching tabs."}
+                      </div>
+                    </div>
+                  </TableCell></TableRow>
+                )}
+                {!loading && filtered.map((i) => (
                   <TableRow key={i.id} className="cursor-pointer" onClick={() => setSelected(i)}>
                     <TableCell>
                       <div className="font-medium">{i.title}</div>
@@ -359,6 +395,10 @@ function IncidentDetailDialog({ incident, canManage, isSuperAdmin, onChanged, on
   const [analyzing, setAnalyzing] = useState(false);
   const [current, setCurrent] = useState<IncidentRow>(incident);
   const [media, setMedia] = useState<{ id: string; file_path: string; mime_type: string | null; kind: string; url?: string }[]>([]);
+  const [aiRisk, setAiRisk] = useState<number | null>(null);
+  const [aiActions, setAiActions] = useState<string[]>([]);
+  const [aiEta, setAiEta] = useState<string | null>(null);
+  const [streamingText, setStreamingText] = useState<string>("");
   const analyze = useServerFn(analyzeIncident);
 
   useEffect(() => {
@@ -372,6 +412,14 @@ function IncidentDetailDialog({ incident, canManage, isSuperAdmin, onChanged, on
     });
   }, [incident.id]);
 
+  // Hydrate AI panel from existing DB summary on open
+  useEffect(() => {
+    if (current.ai_suggested_actions) {
+      const list = current.ai_suggested_actions.split(/\n[•\-\*]?\s*|^[•\-\*]\s*/g).map((s) => s.trim()).filter(Boolean);
+      setAiActions(list);
+    }
+  }, [current.ai_suggested_actions]);
+
   const saveStatus = async () => {
     const patch: Record<string, unknown> = { status };
     if (status === "resolved" || status === "closed") patch.resolved_at = new Date().toISOString();
@@ -383,20 +431,42 @@ function IncidentDetailDialog({ incident, canManage, isSuperAdmin, onChanged, on
 
   const runAi = async () => {
     setAnalyzing(true);
+    setStreamingText("");
+    // typing animation while we wait
+    const phrases = ["Gathering context…", "Reasoning with Gemini…", "Scoring risk factors…", "Drafting action plan…"];
+    let idx = 0;
+    const tick = setInterval(() => {
+      setStreamingText(phrases[idx % phrases.length]);
+      idx++;
+    }, 700);
     try {
       const out = await analyze({ data: {
         incident_id: incident.id, title: incident.title, description: incident.description, category: incident.category,
       }});
       const { data: refreshed } = await db.from("incidents").select("*").eq("id", incident.id).single();
       if (refreshed) setCurrent(refreshed as IncidentRow);
+      setAiRisk(out.risk_score ?? null);
+      setAiActions(out.suggested_actions ?? []);
+      // Estimate ETA from severity
+      const etaMap: Record<string, string> = { critical: "Within 1 hour", high: "Within 4 hours", medium: "Within 24 hours", low: "Within 72 hours" };
+      setAiEta(etaMap[out.severity] ?? "Within 24 hours");
       toast.success(`AI analysis complete · risk ${out.risk_score}/100`);
       onChanged();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "AI analysis failed");
     } finally {
+      clearInterval(tick);
+      setStreamingText("");
       setAnalyzing(false);
     }
   };
+
+  // Derived risk score (use AI value when present, otherwise estimate from severity)
+  const sevToScore: Record<IncidentSeverity, number> = { low: 20, medium: 50, high: 75, critical: 92 };
+  const displayRisk = aiRisk ?? sevToScore[current.ai_severity ?? current.severity];
+  const ringColor = displayRisk >= 70 ? "#dc2626" : displayRisk >= 40 ? "#f97316" : "#16a34a";
+  const circumference = 2 * Math.PI * 36;
+  const dash = (displayRisk / 100) * circumference;
 
   return (
     <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -429,31 +499,101 @@ function IncidentDetailDialog({ incident, canManage, isSuperAdmin, onChanged, on
           </div>
         )}
 
-        <Card className="border-primary/30 bg-primary/5">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2 font-semibold"><Sparkles className="h-4 w-4 text-primary" /> AI Risk Analysis</div>
-              <Button size="sm" variant="outline" onClick={runAi} disabled={analyzing}>
-                {analyzing ? <><Loader2 className="h-3 w-3 mr-1 animate-spin" />Analysing…</> : current.ai_summary ? "Re-run" : "Run analysis"}
+        <Card className="border-2 border-purple-500/40 bg-gradient-to-br from-purple-500/5 via-background to-primary/5 relative overflow-hidden">
+          <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-purple-500/10 blur-3xl" />
+          <CardContent className="p-5 relative">
+            <div className="flex items-start justify-between gap-3 flex-wrap mb-4">
+              <div>
+                <div className="flex items-center gap-2 font-semibold text-base">
+                  <Sparkles className="h-5 w-5 text-purple-500" />
+                  AI Risk Analysis
+                </div>
+                <div className="mt-0.5 text-[11px] uppercase tracking-wider text-purple-500 font-semibold">
+                  Powered by Gemini AI
+                </div>
+              </div>
+              <Button
+                size="sm"
+                onClick={runAi}
+                disabled={analyzing}
+                className="bg-gradient-to-r from-purple-600 to-primary hover:opacity-90 text-white border-0"
+              >
+                {analyzing ? (
+                  <><Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />Analysing…</>
+                ) : (
+                  <><Sparkles className="h-3.5 w-3.5 mr-1.5" />{current.ai_summary ? "Re-analyze with AI" : "Analyze with AI"}</>
+                )}
               </Button>
             </div>
-            {current.ai_summary ? (
-              <div className="space-y-2 text-sm">
-                <p>{current.ai_summary}</p>
-                {current.ai_severity && (
-                  <div className="text-xs">
-                    AI severity: <Badge variant="outline" className={`capitalize ${severityTone[current.ai_severity]}`}>{current.ai_severity}</Badge>
+
+            <div className="grid sm:grid-cols-[120px_1fr] gap-5 items-center">
+              {/* Risk Score Ring */}
+              <div className="flex flex-col items-center">
+                <div className="relative h-[100px] w-[100px]">
+                  <svg viewBox="0 0 80 80" className="h-full w-full -rotate-90">
+                    <circle cx="40" cy="40" r="36" stroke="currentColor" strokeWidth="6" fill="none" className="text-muted/40" />
+                    <circle
+                      cx="40" cy="40" r="36" fill="none"
+                      stroke={ringColor}
+                      strokeWidth="6"
+                      strokeLinecap="round"
+                      strokeDasharray={`${dash} ${circumference}`}
+                      className="transition-all duration-700"
+                    />
+                  </svg>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <div className="font-display text-2xl font-bold" style={{ color: ringColor }}>{Math.round(displayRisk)}</div>
+                    <div className="text-[9px] uppercase tracking-wider text-muted-foreground">Risk</div>
+                  </div>
+                </div>
+                <Badge variant="outline" className={`mt-2 capitalize text-[10px] ${severityTone[current.ai_severity ?? current.severity]}`}>
+                  {current.ai_severity ?? current.severity}
+                </Badge>
+              </div>
+
+              <div className="space-y-3 min-w-0">
+                {analyzing && (
+                  <div className="text-xs text-purple-600 dark:text-purple-400 flex items-center gap-1.5">
+                    <span className="inline-flex gap-0.5">
+                      <span className="h-1.5 w-1.5 rounded-full bg-purple-500 animate-bounce [animation-delay:-0.3s]" />
+                      <span className="h-1.5 w-1.5 rounded-full bg-purple-500 animate-bounce [animation-delay:-0.15s]" />
+                      <span className="h-1.5 w-1.5 rounded-full bg-purple-500 animate-bounce" />
+                    </span>
+                    {streamingText || "Thinking…"}
                   </div>
                 )}
-                {current.ai_suggested_actions && (
-                  <div>
-                    <div className="text-xs font-semibold mb-1">Suggested actions</div>
-                    <p className="text-xs whitespace-pre-wrap">• {current.ai_suggested_actions}</p>
+                {current.ai_summary ? (
+                  <p className="text-sm leading-relaxed">{current.ai_summary}</p>
+                ) : !analyzing && (
+                  <p className="text-xs text-muted-foreground">
+                    No analysis yet. Click <span className="font-medium">Analyze with AI</span> to auto-classify severity, score risk, and get a recommended action plan.
+                  </p>
+                )}
+                {aiEta && (
+                  <div className="text-xs flex items-center gap-1.5">
+                    <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span className="text-muted-foreground">Estimated resolution:</span>
+                    <span className="font-medium">{aiEta}</span>
                   </div>
                 )}
               </div>
-            ) : (
-              <p className="text-xs text-muted-foreground">No analysis yet. Run AI to auto-classify severity and get suggested actions.</p>
+            </div>
+
+            {aiActions.length > 0 && (
+              <div className="mt-4 pt-4 border-t border-purple-500/20">
+                <div className="text-xs font-semibold mb-2 flex items-center gap-1.5">
+                  <CheckCircle2 className="h-3.5 w-3.5 text-purple-500" />
+                  Recommended Actions
+                </div>
+                <ol className="space-y-1.5">
+                  {aiActions.slice(0, 5).map((a, i) => (
+                    <li key={i} className="text-sm flex gap-2.5 items-start">
+                      <span className="shrink-0 h-5 w-5 rounded-full bg-purple-500/15 text-purple-600 dark:text-purple-400 text-[11px] font-semibold flex items-center justify-center">{i + 1}</span>
+                      <span className="leading-snug">{a}</span>
+                    </li>
+                  ))}
+                </ol>
+              </div>
             )}
           </CardContent>
         </Card>

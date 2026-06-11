@@ -395,6 +395,10 @@ function IncidentDetailDialog({ incident, canManage, isSuperAdmin, onChanged, on
   const [analyzing, setAnalyzing] = useState(false);
   const [current, setCurrent] = useState<IncidentRow>(incident);
   const [media, setMedia] = useState<{ id: string; file_path: string; mime_type: string | null; kind: string; url?: string }[]>([]);
+  const [aiRisk, setAiRisk] = useState<number | null>(null);
+  const [aiActions, setAiActions] = useState<string[]>([]);
+  const [aiEta, setAiEta] = useState<string | null>(null);
+  const [streamingText, setStreamingText] = useState<string>("");
   const analyze = useServerFn(analyzeIncident);
 
   useEffect(() => {
@@ -408,6 +412,14 @@ function IncidentDetailDialog({ incident, canManage, isSuperAdmin, onChanged, on
     });
   }, [incident.id]);
 
+  // Hydrate AI panel from existing DB summary on open
+  useEffect(() => {
+    if (current.ai_suggested_actions) {
+      const list = current.ai_suggested_actions.split(/\n[•\-\*]?\s*|^[•\-\*]\s*/g).map((s) => s.trim()).filter(Boolean);
+      setAiActions(list);
+    }
+  }, [current.ai_suggested_actions]);
+
   const saveStatus = async () => {
     const patch: Record<string, unknown> = { status };
     if (status === "resolved" || status === "closed") patch.resolved_at = new Date().toISOString();
@@ -419,20 +431,42 @@ function IncidentDetailDialog({ incident, canManage, isSuperAdmin, onChanged, on
 
   const runAi = async () => {
     setAnalyzing(true);
+    setStreamingText("");
+    // typing animation while we wait
+    const phrases = ["Gathering context…", "Reasoning with Gemini…", "Scoring risk factors…", "Drafting action plan…"];
+    let idx = 0;
+    const tick = setInterval(() => {
+      setStreamingText(phrases[idx % phrases.length]);
+      idx++;
+    }, 700);
     try {
       const out = await analyze({ data: {
         incident_id: incident.id, title: incident.title, description: incident.description, category: incident.category,
       }});
       const { data: refreshed } = await db.from("incidents").select("*").eq("id", incident.id).single();
       if (refreshed) setCurrent(refreshed as IncidentRow);
+      setAiRisk(out.risk_score ?? null);
+      setAiActions(out.suggested_actions ?? []);
+      // Estimate ETA from severity
+      const etaMap: Record<string, string> = { critical: "Within 1 hour", high: "Within 4 hours", medium: "Within 24 hours", low: "Within 72 hours" };
+      setAiEta(etaMap[out.severity] ?? "Within 24 hours");
       toast.success(`AI analysis complete · risk ${out.risk_score}/100`);
       onChanged();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "AI analysis failed");
     } finally {
+      clearInterval(tick);
+      setStreamingText("");
       setAnalyzing(false);
     }
   };
+
+  // Derived risk score (use AI value when present, otherwise estimate from severity)
+  const sevToScore: Record<IncidentSeverity, number> = { low: 20, medium: 50, high: 75, critical: 92 };
+  const displayRisk = aiRisk ?? sevToScore[current.ai_severity ?? current.severity];
+  const ringColor = displayRisk >= 70 ? "#dc2626" : displayRisk >= 40 ? "#f97316" : "#16a34a";
+  const circumference = 2 * Math.PI * 36;
+  const dash = (displayRisk / 100) * circumference;
 
   return (
     <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">

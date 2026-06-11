@@ -499,31 +499,101 @@ function IncidentDetailDialog({ incident, canManage, isSuperAdmin, onChanged, on
           </div>
         )}
 
-        <Card className="border-primary/30 bg-primary/5">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2 font-semibold"><Sparkles className="h-4 w-4 text-primary" /> AI Risk Analysis</div>
-              <Button size="sm" variant="outline" onClick={runAi} disabled={analyzing}>
-                {analyzing ? <><Loader2 className="h-3 w-3 mr-1 animate-spin" />Analysing…</> : current.ai_summary ? "Re-run" : "Run analysis"}
+        <Card className="border-2 border-purple-500/40 bg-gradient-to-br from-purple-500/5 via-background to-primary/5 relative overflow-hidden">
+          <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-purple-500/10 blur-3xl" />
+          <CardContent className="p-5 relative">
+            <div className="flex items-start justify-between gap-3 flex-wrap mb-4">
+              <div>
+                <div className="flex items-center gap-2 font-semibold text-base">
+                  <Sparkles className="h-5 w-5 text-purple-500" />
+                  AI Risk Analysis
+                </div>
+                <div className="mt-0.5 text-[11px] uppercase tracking-wider text-purple-500 font-semibold">
+                  Powered by Gemini AI
+                </div>
+              </div>
+              <Button
+                size="sm"
+                onClick={runAi}
+                disabled={analyzing}
+                className="bg-gradient-to-r from-purple-600 to-primary hover:opacity-90 text-white border-0"
+              >
+                {analyzing ? (
+                  <><Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />Analysing…</>
+                ) : (
+                  <><Sparkles className="h-3.5 w-3.5 mr-1.5" />{current.ai_summary ? "Re-analyze with AI" : "Analyze with AI"}</>
+                )}
               </Button>
             </div>
-            {current.ai_summary ? (
-              <div className="space-y-2 text-sm">
-                <p>{current.ai_summary}</p>
-                {current.ai_severity && (
-                  <div className="text-xs">
-                    AI severity: <Badge variant="outline" className={`capitalize ${severityTone[current.ai_severity]}`}>{current.ai_severity}</Badge>
+
+            <div className="grid sm:grid-cols-[120px_1fr] gap-5 items-center">
+              {/* Risk Score Ring */}
+              <div className="flex flex-col items-center">
+                <div className="relative h-[100px] w-[100px]">
+                  <svg viewBox="0 0 80 80" className="h-full w-full -rotate-90">
+                    <circle cx="40" cy="40" r="36" stroke="currentColor" strokeWidth="6" fill="none" className="text-muted/40" />
+                    <circle
+                      cx="40" cy="40" r="36" fill="none"
+                      stroke={ringColor}
+                      strokeWidth="6"
+                      strokeLinecap="round"
+                      strokeDasharray={`${dash} ${circumference}`}
+                      className="transition-all duration-700"
+                    />
+                  </svg>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <div className="font-display text-2xl font-bold" style={{ color: ringColor }}>{Math.round(displayRisk)}</div>
+                    <div className="text-[9px] uppercase tracking-wider text-muted-foreground">Risk</div>
+                  </div>
+                </div>
+                <Badge variant="outline" className={`mt-2 capitalize text-[10px] ${severityTone[current.ai_severity ?? current.severity]}`}>
+                  {current.ai_severity ?? current.severity}
+                </Badge>
+              </div>
+
+              <div className="space-y-3 min-w-0">
+                {analyzing && (
+                  <div className="text-xs text-purple-600 dark:text-purple-400 flex items-center gap-1.5">
+                    <span className="inline-flex gap-0.5">
+                      <span className="h-1.5 w-1.5 rounded-full bg-purple-500 animate-bounce [animation-delay:-0.3s]" />
+                      <span className="h-1.5 w-1.5 rounded-full bg-purple-500 animate-bounce [animation-delay:-0.15s]" />
+                      <span className="h-1.5 w-1.5 rounded-full bg-purple-500 animate-bounce" />
+                    </span>
+                    {streamingText || "Thinking…"}
                   </div>
                 )}
-                {current.ai_suggested_actions && (
-                  <div>
-                    <div className="text-xs font-semibold mb-1">Suggested actions</div>
-                    <p className="text-xs whitespace-pre-wrap">• {current.ai_suggested_actions}</p>
+                {current.ai_summary ? (
+                  <p className="text-sm leading-relaxed">{current.ai_summary}</p>
+                ) : !analyzing && (
+                  <p className="text-xs text-muted-foreground">
+                    No analysis yet. Click <span className="font-medium">Analyze with AI</span> to auto-classify severity, score risk, and get a recommended action plan.
+                  </p>
+                )}
+                {aiEta && (
+                  <div className="text-xs flex items-center gap-1.5">
+                    <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span className="text-muted-foreground">Estimated resolution:</span>
+                    <span className="font-medium">{aiEta}</span>
                   </div>
                 )}
               </div>
-            ) : (
-              <p className="text-xs text-muted-foreground">No analysis yet. Run AI to auto-classify severity and get suggested actions.</p>
+            </div>
+
+            {aiActions.length > 0 && (
+              <div className="mt-4 pt-4 border-t border-purple-500/20">
+                <div className="text-xs font-semibold mb-2 flex items-center gap-1.5">
+                  <CheckCircle2 className="h-3.5 w-3.5 text-purple-500" />
+                  Recommended Actions
+                </div>
+                <ol className="space-y-1.5">
+                  {aiActions.slice(0, 5).map((a, i) => (
+                    <li key={i} className="text-sm flex gap-2.5 items-start">
+                      <span className="shrink-0 h-5 w-5 rounded-full bg-purple-500/15 text-purple-600 dark:text-purple-400 text-[11px] font-semibold flex items-center justify-center">{i + 1}</span>
+                      <span className="leading-snug">{a}</span>
+                    </li>
+                  ))}
+                </ol>
+              </div>
             )}
           </CardContent>
         </Card>

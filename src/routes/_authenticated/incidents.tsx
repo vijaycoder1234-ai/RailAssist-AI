@@ -84,6 +84,9 @@ function IncidentsPage() {
 
   useEffect(() => { load(); }, []);
 
+  // Live updates: refresh list whenever incidents change in Supabase
+  useRealtimeInvalidate(["incidents", "maintenance_tasks"], () => { load(); });
+
   const filtered = useMemo(() => items.filter((i) => {
     if (tab !== "all" && i.status !== tab) return false;
     if (severityFilter !== "all" && i.severity !== severityFilter) return false;

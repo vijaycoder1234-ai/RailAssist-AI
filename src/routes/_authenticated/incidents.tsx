@@ -21,6 +21,7 @@ import { analyzeIncident } from "@/lib/ai-incident.functions";
 import { downloadIncidentPdf } from "@/lib/incident-pdf";
 import { ensureNotificationPermission, showBrowserNotification, notifyUser } from "@/lib/notifications";
 import { IncidentMap } from "@/components/incident-map";
+import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
 import {
   AlertTriangle, Plus, MapPin, Sparkles, ImagePlus, Loader2, CheckCircle2, Clock, Activity, Download, Map as MapIcon,
   Inbox, RefreshCw,
@@ -83,6 +84,9 @@ function IncidentsPage() {
   };
 
   useEffect(() => { load(); }, []);
+
+  // Live updates: refresh list whenever incidents change in Supabase
+  useRealtimeInvalidate(["incidents", "maintenance_tasks"], () => { load(); });
 
   const filtered = useMemo(() => items.filter((i) => {
     if (tab !== "all" && i.status !== tab) return false;

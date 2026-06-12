@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { db, type IncidentRow, type IncidentSeverity } from "@/lib/db";
+import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
 import { AlertTriangle, CheckCircle2, Clock, Activity, Plus } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
@@ -31,11 +32,19 @@ function Dashboard() {
     else if (isInspector && inspector?.status !== "approved") navigate({ to: "/auth/pending" });
   }, [loading, isSuperAdmin, isInspector, inspector, navigate]);
 
-  useEffect(() => {
+  const loadIncidents = () => {
     if (!user) return;
     db.from("incidents").select("*").eq("reporter_id", user.id).order("created_at", { ascending: false }).limit(10)
       .then(({ data }: { data: IncidentRow[] | null }) => setItems(data ?? []));
+  };
+
+  useEffect(() => {
+    loadIncidents();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
+
+  // Live refresh when any incident row changes
+  useRealtimeInvalidate(["incidents"], () => loadIncidents());
 
   const kpis = useMemo(() => [
     { label: "My Incidents", value: items.length, icon: AlertTriangle, tone: "text-primary" },

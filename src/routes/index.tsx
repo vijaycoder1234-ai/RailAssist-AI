@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import {
   ShieldCheck,
   Brain,
@@ -19,6 +19,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { getPublicStats, type PublicStats } from "@/lib/public-stats.functions";
 import { useCountUp } from "@/hooks/use-count-up";
+import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -81,6 +82,11 @@ const benefits = [
 
 function HomePage() {
   const stats = Route.useLoaderData();
+  const router = useRouter();
+  // Live updates — re-run the loader whenever incidents/inspectors/maintenance change
+  useRealtimeInvalidate(["incidents", "inspectors", "maintenance_tasks"], () => {
+    router.invalidate();
+  });
   const incCount = useCountUp(stats.incidents);
   const resCount = useCountUp(stats.resolved);
   const inspCount = useCountUp(stats.inspectors);

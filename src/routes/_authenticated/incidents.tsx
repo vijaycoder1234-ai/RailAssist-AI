@@ -2,7 +2,6 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { z } from "zod";
 import { toast } from "sonner";
-import { useServerFn } from "@tanstack/react-start";
 import { AppShell } from "@/components/app-shell";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -17,7 +16,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/hooks/use-auth";
 import { db, type IncidentRow, type IncidentSeverity, type IncidentStatus, type IncidentCategory } from "@/lib/db";
-import { analyzeIncident } from "@/lib/ai-incident.functions";
+import { analyzeIncidentClient } from "@/lib/ai-incident";
 import { downloadIncidentPdf } from "@/lib/incident-pdf";
 import { ensureNotificationPermission, showBrowserNotification, notifyUser } from "@/lib/notifications";
 import { IncidentMap } from "@/components/incident-map";
@@ -403,7 +402,6 @@ function IncidentDetailDialog({ incident, canManage, isSuperAdmin, onChanged, on
   const [aiActions, setAiActions] = useState<string[]>([]);
   const [aiEta, setAiEta] = useState<string | null>(null);
   const [streamingText, setStreamingText] = useState<string>("");
-  const analyze = useServerFn(analyzeIncident);
 
   useEffect(() => {
     db.from("incident_media").select("*").eq("incident_id", incident.id).then(async ({ data }: { data: { id: string; file_path: string; mime_type: string | null; kind: string }[] | null }) => {
@@ -444,9 +442,9 @@ function IncidentDetailDialog({ incident, canManage, isSuperAdmin, onChanged, on
       idx++;
     }, 700);
     try {
-      const out = await analyze({ data: {
+      const out = await analyzeIncidentClient({
         incident_id: incident.id, title: incident.title, description: incident.description, category: incident.category,
-      }});
+      });
       const { data: refreshed } = await db.from("incidents").select("*").eq("id", incident.id).single();
       if (refreshed) setCurrent(refreshed as IncidentRow);
       setAiRisk(out.risk_score ?? null);

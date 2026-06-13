@@ -78,12 +78,14 @@ const benefits = [
 ];
 
 function HomePage() {
-  const stats = Route.useLoaderData();
-  const router = useRouter();
-  // Live updates — re-run the loader whenever incidents/inspectors/maintenance change
-  useRealtimeInvalidate(["incidents", "inspectors", "maintenance_tasks"], () => {
-    router.invalidate();
+  const [stats, setStats] = useState<PublicStats>({
+    incidents: 0, resolved: 0, critical: 0, stations: 0, zones: 0,
+    inspectors: 0, tasks: 0, resolutionRate: 0,
   });
+  const refresh = () => { getPublicStats().then(setStats); };
+  useEffect(() => { refresh(); }, []);
+  useRouter();
+  useRealtimeInvalidate(["incidents", "inspectors", "maintenance_tasks"], refresh);
   const incCount = useCountUp(stats.incidents);
   const resCount = useCountUp(stats.resolved);
   const inspCount = useCountUp(stats.inspectors);

@@ -178,12 +178,3 @@ Result: dashboards, map markers, counters, and resolution rates update
 
 ---
 
-## 🏆 Why It Wins
-
-RailAssist AI is **not a prototype** — it is a working, secure, multi-role, realtime
-platform that addresses an urgent real-world problem: railway safety in one of the
-world's largest networks (Indian Railways: 70K+ track km, 8,300+ stations, 23M daily
-passengers). Every line of the stack — RLS, server functions, AI, realtime, PDF,
-notifications, mobile UX — is production-grade and built on Lovable Cloud + Lovable
-AI Gateway.
-

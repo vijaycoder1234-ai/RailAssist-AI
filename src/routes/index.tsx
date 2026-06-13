@@ -17,9 +17,10 @@ import { SiteFooter } from "@/components/site-footer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { getPublicStats, type PublicStats } from "@/lib/public-stats.functions";
+import { getPublicStats, type PublicStats } from "@/lib/public-stats";
 import { useCountUp } from "@/hooks/use-count-up";
 import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
+import { useEffect, useState } from "react";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -37,10 +38,6 @@ export const Route = createFileRoute("/")({
       },
     ],
   }),
-  loader: async (): Promise<PublicStats> => {
-    try { return await getPublicStats(); }
-    catch { return { incidents: 0, resolved: 0, critical: 0, stations: 0, zones: 0, inspectors: 0, tasks: 0, resolutionRate: 0 }; }
-  },
   errorComponent: ({ error }) => <div className="p-8 text-center text-sm text-destructive">{error.message}</div>,
   notFoundComponent: () => <div className="p-8 text-center text-sm">Not found.</div>,
   component: HomePage,

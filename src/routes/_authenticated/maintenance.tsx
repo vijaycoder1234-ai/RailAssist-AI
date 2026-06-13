@@ -14,7 +14,8 @@ import { useAuth } from "@/hooks/use-auth";
 import { db, type IncidentRow } from "@/lib/db";
 import { notifyUser, ensureNotificationPermission } from "@/lib/notifications";
 import { downloadMaintenancePdf } from "@/lib/incident-pdf";
-import { Wrench, ImagePlus, Loader2, CheckCircle2, Clock, Activity, Download } from "lucide-react";
+import { downloadMaintenanceOpsReport } from "@/lib/ops-report-pdf";
+import { Wrench, ImagePlus, Loader2, CheckCircle2, Clock, Activity, Download, FileBarChart2 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/maintenance")({
   head: () => ({ meta: [{ title: "Maintenance Dashboard — RailAssist AI" }] }),
@@ -101,7 +102,24 @@ function MaintenancePage() {
           <h1 className="font-display text-2xl sm:text-3xl font-bold tracking-tight">Maintenance Workspace</h1>
           <p className="mt-1 text-sm text-muted-foreground">Track assigned repair tasks and upload completion evidence.</p>
         </div>
-        <Badge variant="secondary"><Wrench className="h-3 w-3 mr-1" /> Maintenance Team</Badge>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={async () => {
+              const tid = toast.loading("Generating advanced operations report…");
+              try {
+                await downloadMaintenanceOpsReport();
+                toast.success("Report downloaded", { id: tid });
+              } catch (e) {
+                toast.error(e instanceof Error ? e.message : "Failed to generate report", { id: tid });
+              }
+            }}
+          >
+            <FileBarChart2 className="h-4 w-4 mr-2" /> Advanced Report
+          </Button>
+          <Badge variant="secondary"><Wrench className="h-3 w-3 mr-1" /> Maintenance Team</Badge>
+        </div>
       </div>
 
       <div className="mt-6 grid gap-3 grid-cols-2 lg:grid-cols-4">

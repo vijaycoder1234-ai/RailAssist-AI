@@ -187,4 +187,3 @@ passengers). Every line of the stack — RLS, server functions, AI, realtime, PD
 notifications, mobile UX — is production-grade and built on Lovable Cloud + Lovable
 AI Gateway.
 
-> **Built with ❤️ on [Lovable](https://lovable.dev).**

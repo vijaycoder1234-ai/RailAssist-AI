@@ -84,7 +84,6 @@ function HomePage() {
   });
   const refresh = () => { getPublicStats().then(setStats); };
   useEffect(() => { refresh(); }, []);
-  useRouter();
   useRealtimeInvalidate(["incidents", "inspectors", "maintenance_tasks"], refresh);
   const incCount = useCountUp(stats.incidents);
   const resCount = useCountUp(stats.resolved);

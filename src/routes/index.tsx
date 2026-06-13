@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   ShieldCheck,
   Brain,
@@ -17,9 +17,10 @@ import { SiteFooter } from "@/components/site-footer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { getPublicStats, type PublicStats } from "@/lib/public-stats.functions";
+import { getPublicStats, type PublicStats } from "@/lib/public-stats";
 import { useCountUp } from "@/hooks/use-count-up";
 import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
+import { useEffect, useState } from "react";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -37,10 +38,6 @@ export const Route = createFileRoute("/")({
       },
     ],
   }),
-  loader: async (): Promise<PublicStats> => {
-    try { return await getPublicStats(); }
-    catch { return { incidents: 0, resolved: 0, critical: 0, stations: 0, zones: 0, inspectors: 0, tasks: 0, resolutionRate: 0 }; }
-  },
   errorComponent: ({ error }) => <div className="p-8 text-center text-sm text-destructive">{error.message}</div>,
   notFoundComponent: () => <div className="p-8 text-center text-sm">Not found.</div>,
   component: HomePage,
@@ -81,12 +78,13 @@ const benefits = [
 ];
 
 function HomePage() {
-  const stats = Route.useLoaderData();
-  const router = useRouter();
-  // Live updates — re-run the loader whenever incidents/inspectors/maintenance change
-  useRealtimeInvalidate(["incidents", "inspectors", "maintenance_tasks"], () => {
-    router.invalidate();
+  const [stats, setStats] = useState<PublicStats>({
+    incidents: 0, resolved: 0, critical: 0, stations: 0, zones: 0,
+    inspectors: 0, tasks: 0, resolutionRate: 0,
   });
+  const refresh = () => { getPublicStats().then(setStats); };
+  useEffect(() => { refresh(); }, []);
+  useRealtimeInvalidate(["incidents", "inspectors", "maintenance_tasks"], refresh);
   const incCount = useCountUp(stats.incidents);
   const resCount = useCountUp(stats.resolved);
   const inspCount = useCountUp(stats.inspectors);

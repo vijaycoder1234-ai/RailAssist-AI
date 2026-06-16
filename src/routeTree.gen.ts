@@ -23,7 +23,6 @@ import { Route as AuthenticatedDashboardRouteImport } from './routes/_authentica
 import { Route as AuthenticatedAssetsRouteImport } from './routes/_authenticated/assets'
 import { Route as AuthenticatedAnalyticsRouteImport } from './routes/_authenticated/analytics'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
-import { Route as ApiPublicAiAnalyzeIncidentRouteImport } from './routes/api/public/ai-analyze-incident'
 
 const FeaturesRoute = FeaturesRouteImport.update({
   id: '/features',
@@ -95,12 +94,6 @@ const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const ApiPublicAiAnalyzeIncidentRoute =
-  ApiPublicAiAnalyzeIncidentRouteImport.update({
-    id: '/api/public/ai-analyze-incident',
-    path: '/api/public/ai-analyze-incident',
-    getParentRoute: () => rootRouteImport,
-  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -116,7 +109,6 @@ export interface FileRoutesByFullPath {
   '/maintenance': typeof AuthenticatedMaintenanceRoute
   '/stations': typeof AuthenticatedStationsRoute
   '/auth/pending': typeof AuthPendingRoute
-  '/api/public/ai-analyze-incident': typeof ApiPublicAiAnalyzeIncidentRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -132,7 +124,6 @@ export interface FileRoutesByTo {
   '/maintenance': typeof AuthenticatedMaintenanceRoute
   '/stations': typeof AuthenticatedStationsRoute
   '/auth/pending': typeof AuthPendingRoute
-  '/api/public/ai-analyze-incident': typeof ApiPublicAiAnalyzeIncidentRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -150,7 +141,6 @@ export interface FileRoutesById {
   '/_authenticated/maintenance': typeof AuthenticatedMaintenanceRoute
   '/_authenticated/stations': typeof AuthenticatedStationsRoute
   '/auth/pending': typeof AuthPendingRoute
-  '/api/public/ai-analyze-incident': typeof ApiPublicAiAnalyzeIncidentRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -168,7 +158,6 @@ export interface FileRouteTypes {
     | '/maintenance'
     | '/stations'
     | '/auth/pending'
-    | '/api/public/ai-analyze-incident'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -184,7 +173,6 @@ export interface FileRouteTypes {
     | '/maintenance'
     | '/stations'
     | '/auth/pending'
-    | '/api/public/ai-analyze-incident'
   id:
     | '__root__'
     | '/'
@@ -201,7 +189,6 @@ export interface FileRouteTypes {
     | '/_authenticated/maintenance'
     | '/_authenticated/stations'
     | '/auth/pending'
-    | '/api/public/ai-analyze-incident'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -211,7 +198,6 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRouteWithChildren
   ContactRoute: typeof ContactRoute
   FeaturesRoute: typeof FeaturesRoute
-  ApiPublicAiAnalyzeIncidentRoute: typeof ApiPublicAiAnalyzeIncidentRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -314,13 +300,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/api/public/ai-analyze-incident': {
-      id: '/api/public/ai-analyze-incident'
-      path: '/api/public/ai-analyze-incident'
-      fullPath: '/api/public/ai-analyze-incident'
-      preLoaderRoute: typeof ApiPublicAiAnalyzeIncidentRouteImport
-      parentRoute: typeof rootRouteImport
-    }
   }
 }
 
@@ -364,7 +343,6 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRouteWithChildren,
   ContactRoute: ContactRoute,
   FeaturesRoute: FeaturesRoute,
-  ApiPublicAiAnalyzeIncidentRoute: ApiPublicAiAnalyzeIncidentRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

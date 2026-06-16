@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 import { AppShell } from "@/components/app-shell";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -7,7 +8,8 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { db, type IncidentRow, type IncidentSeverity } from "@/lib/db";
 import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
-import { AlertTriangle, CheckCircle2, Clock, Activity, Plus } from "lucide-react";
+import { aiDailyBriefing } from "@/lib/ai-ops.functions";
+import { AlertTriangle, CheckCircle2, Clock, Activity, Plus, Sparkles, Loader2 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({ meta: [{ title: "Inspector Dashboard — RailAssist AI" }] }),
@@ -25,6 +27,30 @@ function Dashboard() {
   const { isSuperAdmin, isInspector, inspector, user, loading } = useAuth();
   const navigate = useNavigate();
   const [items, setItems] = useState<IncidentRow[]>([]);
+  const [briefing, setBriefing] = useState<{ headline: string; summary: string; risks: string[]; recommendations: string[] } | null>(null);
+  const [briefingBusy, setBriefingBusy] = useState(false);
+
+  const generateBriefing = async () => {
+    setBriefingBusy(true);
+    try {
+      const out = await aiDailyBriefing({
+        data: {
+          incidents: items.slice(0, 30).map((i) => ({
+            title: i.title,
+            severity: i.severity,
+            status: i.status,
+            category: i.category ?? null,
+          })),
+        },
+      });
+      setBriefing(out);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "AI briefing failed");
+    } finally {
+      setBriefingBusy(false);
+    }
+  };
+
 
   useEffect(() => {
     if (loading) return;
@@ -79,6 +105,46 @@ function Dashboard() {
           </Card>
         ))}
       </div>
+
+      <Card className="mt-6 border-primary/30 bg-gradient-to-br from-primary/5 to-transparent">
+        <CardContent className="p-5">
+          <div className="flex items-start justify-between gap-3 flex-wrap">
+            <div className="flex items-start gap-3 min-w-0">
+              <div className="rounded-md bg-primary/15 p-2 text-primary"><Sparkles className="h-4 w-4" /></div>
+              <div className="min-w-0">
+                <h2 className="font-display text-lg font-semibold">AI Daily Briefing</h2>
+                <p className="text-sm text-muted-foreground">Executive summary of your current incidents, generated on demand.</p>
+              </div>
+            </div>
+            <Button size="sm" onClick={generateBriefing} disabled={briefingBusy || items.length === 0}>
+              {briefingBusy ? <><Loader2 className="h-4 w-4 mr-1.5 animate-spin" />Generating…</> : <><Sparkles className="h-4 w-4 mr-1.5" />Generate</>}
+            </Button>
+          </div>
+          {briefing && (
+            <div className="mt-4 space-y-3 text-sm">
+              <div className="font-display text-base font-semibold">{briefing.headline}</div>
+              <p className="text-muted-foreground">{briefing.summary}</p>
+              {briefing.risks.length > 0 && (
+                <div>
+                  <div className="font-medium mb-1">Top risks</div>
+                  <ul className="list-disc pl-5 space-y-0.5 text-muted-foreground">
+                    {briefing.risks.map((r, i) => <li key={i}>{r}</li>)}
+                  </ul>
+                </div>
+              )}
+              {briefing.recommendations.length > 0 && (
+                <div>
+                  <div className="font-medium mb-1">Recommended actions</div>
+                  <ol className="list-decimal pl-5 space-y-0.5 text-muted-foreground">
+                    {briefing.recommendations.map((r, i) => <li key={i}>{r}</li>)}
+                  </ol>
+                </div>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
 
       <Card className="mt-6">
         <CardContent className="p-5">

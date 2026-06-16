@@ -15,7 +15,8 @@ import { db, type IncidentRow } from "@/lib/db";
 import { notifyUser, ensureNotificationPermission } from "@/lib/notifications";
 import { downloadMaintenancePdf } from "@/lib/incident-pdf";
 import { downloadMaintenanceOpsReport } from "@/lib/ops-report-pdf";
-import { Wrench, ImagePlus, Loader2, CheckCircle2, Clock, Activity, Download, FileBarChart2 } from "lucide-react";
+import { aiMaintenancePrioritizer } from "@/lib/ai-ops.functions";
+import { Wrench, ImagePlus, Loader2, CheckCircle2, Clock, Activity, Download, FileBarChart2, Sparkles } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/maintenance")({
   head: () => ({ meta: [{ title: "Maintenance Dashboard — RailAssist AI" }] }),
@@ -56,6 +57,32 @@ function MaintenancePage() {
   const [incidents, setIncidents] = useState<Record<string, IncidentRow>>({});
   const [tab, setTab] = useState<"active" | TaskStatus>("active");
   const [selected, setSelected] = useState<Task | null>(null);
+  const [aiPlan, setAiPlan] = useState<{ strategy: string; order: { id: string; rank: number; reason: string }[] } | null>(null);
+  const [aiBusy, setAiBusy] = useState(false);
+
+  const runPrioritizer = async () => {
+    setAiBusy(true);
+    try {
+      const pending = tasks.filter((t) => t.status !== "completed" && t.status !== "rejected").slice(0, 30);
+      const out = await aiMaintenancePrioritizer({
+        data: {
+          tasks: pending.map((t) => ({
+            id: t.id,
+            title: incidents[t.incident_id]?.title ?? "Maintenance task",
+            priority: t.priority,
+            status: t.status,
+            due_at: t.due_at,
+          })),
+        },
+      });
+      setAiPlan(out);
+      toast.success("AI prioritization ready");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "AI prioritizer failed");
+    } finally {
+      setAiBusy(false);
+    }
+  };
 
   useEffect(() => { ensureNotificationPermission(); }, []);
 
@@ -102,7 +129,10 @@ function MaintenancePage() {
           <h1 className="font-display text-2xl sm:text-3xl font-bold tracking-tight">Maintenance Workspace</h1>
           <p className="mt-1 text-sm text-muted-foreground">Track assigned repair tasks and upload completion evidence.</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <Button variant="outline" size="sm" onClick={runPrioritizer} disabled={aiBusy || tasks.length === 0}>
+            {aiBusy ? <><Loader2 className="h-4 w-4 mr-1.5 animate-spin" />Prioritising…</> : <><Sparkles className="h-4 w-4 mr-1.5" />AI Prioritise</>}
+          </Button>
           <Button
             variant="outline"
             size="sm"
@@ -121,6 +151,34 @@ function MaintenancePage() {
           <Badge variant="secondary"><Wrench className="h-3 w-3 mr-1" /> Maintenance Team</Badge>
         </div>
       </div>
+
+      {aiPlan && aiPlan.order.length > 0 && (
+        <Card className="mt-6 border-primary/30 bg-gradient-to-br from-primary/5 to-transparent">
+          <CardContent className="p-5">
+            <div className="flex items-center gap-2 mb-2">
+              <Sparkles className="h-4 w-4 text-primary" />
+              <h2 className="font-display text-base font-semibold">AI Recommended Order</h2>
+            </div>
+            {aiPlan.strategy && <p className="text-sm text-muted-foreground mb-3">{aiPlan.strategy}</p>}
+            <ol className="space-y-2 text-sm">
+              {aiPlan.order.slice(0, 10).map((o) => {
+                const t = tasks.find((tt) => tt.id === o.id);
+                const inc = t ? incidents[t.incident_id] : undefined;
+                return (
+                  <li key={o.id} className="flex items-start gap-3 rounded-md border p-2.5">
+                    <Badge variant="outline" className="shrink-0">#{o.rank}</Badge>
+                    <div className="min-w-0">
+                      <div className="font-medium truncate">{inc?.title ?? "Task"}</div>
+                      <div className="text-xs text-muted-foreground">{o.reason}</div>
+                    </div>
+                  </li>
+                );
+              })}
+            </ol>
+          </CardContent>
+        </Card>
+      )}
+
 
       <div className="mt-6 grid gap-3 grid-cols-2 lg:grid-cols-4">
         <Kpi label="New" value={counts.assigned} icon={Clock} tone="text-warning" />

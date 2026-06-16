@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { analyzeIncidentAi } from "@/lib/ai-incident.functions";
 
 export interface AiIncidentOutput {
   summary: string;
@@ -16,24 +17,17 @@ export interface AnalyzeInput {
 }
 
 /**
- * Calls the Lovable AI gateway server function and persists results via the
- * authenticated Supabase browser client (RLS enforced).
+ * Calls the Lovable AI gateway via a TanStack server function and persists
+ * results via the authenticated Supabase browser client (RLS enforced).
  */
 export async function analyzeIncidentClient(input: AnalyzeInput): Promise<AiIncidentOutput> {
-  const res = await fetch("/api/public/ai-analyze-incident", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
+  const parsed = (await analyzeIncidentAi({
+    data: {
       title: input.title,
       description: input.description,
       category: input.category,
-    }),
-  });
-  if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    throw new Error(text || `AI gateway error ${res.status}`);
-  }
-  const parsed = (await res.json()) as AiIncidentOutput;
+    },
+  })) as AiIncidentOutput;
 
   const sev = (["low", "medium", "high", "critical"] as const).includes(parsed.severity) ? parsed.severity : "medium";
 

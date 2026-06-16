@@ -15,7 +15,8 @@ import { db, type IncidentRow } from "@/lib/db";
 import { notifyUser, ensureNotificationPermission } from "@/lib/notifications";
 import { downloadMaintenancePdf } from "@/lib/incident-pdf";
 import { downloadMaintenanceOpsReport } from "@/lib/ops-report-pdf";
-import { Wrench, ImagePlus, Loader2, CheckCircle2, Clock, Activity, Download, FileBarChart2 } from "lucide-react";
+import { aiMaintenancePrioritizer } from "@/lib/ai-ops.functions";
+import { Wrench, ImagePlus, Loader2, CheckCircle2, Clock, Activity, Download, FileBarChart2, Sparkles } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/maintenance")({
   head: () => ({ meta: [{ title: "Maintenance Dashboard — RailAssist AI" }] }),
@@ -56,6 +57,32 @@ function MaintenancePage() {
   const [incidents, setIncidents] = useState<Record<string, IncidentRow>>({});
   const [tab, setTab] = useState<"active" | TaskStatus>("active");
   const [selected, setSelected] = useState<Task | null>(null);
+  const [aiPlan, setAiPlan] = useState<{ strategy: string; order: { id: string; rank: number; reason: string }[] } | null>(null);
+  const [aiBusy, setAiBusy] = useState(false);
+
+  const runPrioritizer = async () => {
+    setAiBusy(true);
+    try {
+      const pending = tasks.filter((t) => t.status !== "completed" && t.status !== "rejected").slice(0, 30);
+      const out = await aiMaintenancePrioritizer({
+        data: {
+          tasks: pending.map((t) => ({
+            id: t.id,
+            title: incidents[t.incident_id]?.title ?? "Maintenance task",
+            priority: t.priority,
+            status: t.status,
+            due_at: t.due_at,
+          })),
+        },
+      });
+      setAiPlan(out);
+      toast.success("AI prioritization ready");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "AI prioritizer failed");
+    } finally {
+      setAiBusy(false);
+    }
+  };
 
   useEffect(() => { ensureNotificationPermission(); }, []);
 

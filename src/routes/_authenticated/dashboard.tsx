@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 import { AppShell } from "@/components/app-shell";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -7,7 +8,8 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { db, type IncidentRow, type IncidentSeverity } from "@/lib/db";
 import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
-import { AlertTriangle, CheckCircle2, Clock, Activity, Plus } from "lucide-react";
+import { aiDailyBriefing } from "@/lib/ai-ops.functions";
+import { AlertTriangle, CheckCircle2, Clock, Activity, Plus, Sparkles, Loader2 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({ meta: [{ title: "Inspector Dashboard — RailAssist AI" }] }),
@@ -25,6 +27,30 @@ function Dashboard() {
   const { isSuperAdmin, isInspector, inspector, user, loading } = useAuth();
   const navigate = useNavigate();
   const [items, setItems] = useState<IncidentRow[]>([]);
+  const [briefing, setBriefing] = useState<{ headline: string; summary: string; risks: string[]; recommendations: string[] } | null>(null);
+  const [briefingBusy, setBriefingBusy] = useState(false);
+
+  const generateBriefing = async () => {
+    setBriefingBusy(true);
+    try {
+      const out = await aiDailyBriefing({
+        data: {
+          incidents: items.slice(0, 30).map((i) => ({
+            title: i.title,
+            severity: i.severity,
+            status: i.status,
+            category: i.category ?? null,
+          })),
+        },
+      });
+      setBriefing(out);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "AI briefing failed");
+    } finally {
+      setBriefingBusy(false);
+    }
+  };
+
 
   useEffect(() => {
     if (loading) return;

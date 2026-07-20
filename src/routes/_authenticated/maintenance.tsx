@@ -15,7 +15,7 @@ import { db, type IncidentRow } from "@/lib/db";
 import { notifyUser, ensureNotificationPermission } from "@/lib/notifications";
 import { downloadMaintenancePdf } from "@/lib/incident-pdf";
 import { downloadMaintenanceOpsReport } from "@/lib/ops-report-pdf";
-import { aiMaintenancePrioritizer } from "@/lib/ai-ops.functions";
+import { aiMaintenancePrioritizer } from "@/lib/ai-incident";
 import { Wrench, ImagePlus, Loader2, CheckCircle2, Clock, Activity, Download, FileBarChart2, Sparkles } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/maintenance")({

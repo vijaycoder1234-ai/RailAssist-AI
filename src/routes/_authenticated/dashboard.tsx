@@ -33,16 +33,14 @@ function Dashboard() {
   const generateBriefing = async () => {
     setBriefingBusy(true);
     try {
-      const out = await aiDailyBriefing({
-        data: {
-          incidents: items.slice(0, 30).map((i) => ({
-            title: i.title,
-            severity: i.severity,
-            status: i.status,
-            category: i.category ?? null,
-          })),
-        },
-      });
+      const out = await aiDailyBriefing(
+        items.slice(0, 30).map((i) => ({
+          title: i.title,
+          severity: i.severity,
+          status: i.status,
+          category: i.category ?? null,
+        })),
+      );
       setBriefing(out);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "AI briefing failed");

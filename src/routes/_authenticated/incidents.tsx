@@ -402,6 +402,32 @@ function IncidentDetailDialog({ incident, canManage, isSuperAdmin, onChanged, on
   const [aiActions, setAiActions] = useState<string[]>([]);
   const [aiEta, setAiEta] = useState<string | null>(null);
   const [streamingText, setStreamingText] = useState<string>("");
+  const [toolBusy, setToolBusy] = useState<"rca" | "translate" | "alert" | null>(null);
+  const [toolResult, setToolResult] = useState<{ kind: string; content: string } | null>(null);
+  const [translateLang, setTranslateLang] = useState<string>("hi");
+
+  const runRca = async () => {
+    setToolBusy("rca"); setToolResult(null);
+    try {
+      const out = await aiRootCauseAnalysis({ title: current.title, description: current.description, category: current.category });
+      const text = [`Root cause: ${out.root_cause}`, "", "5 Whys:", ...out.whys.map((w, i) => `${i + 1}. ${w}`), "", "Contributing factors:", ...out.contributing.map((c) => `• ${c}`), "", "Preventive actions:", ...out.preventive.map((p) => `• ${p}`)].join("\n");
+      setToolResult({ kind: "Root Cause (5-Whys)", content: text });
+    } catch (e) { toast.error(e instanceof Error ? e.message : "Failed"); } finally { setToolBusy(null); }
+  };
+  const runTranslate = async () => {
+    setToolBusy("translate"); setToolResult(null);
+    try {
+      const out = await aiIncidentTranslate({ title: current.title, description: current.description, target_language: translateLang });
+      setToolResult({ kind: `Translation (${translateLang})`, content: `${out.title}\n\n${out.description}` });
+    } catch (e) { toast.error(e instanceof Error ? e.message : "Failed"); } finally { setToolBusy(null); }
+  };
+  const runAlert = async () => {
+    setToolBusy("alert"); setToolResult(null);
+    try {
+      const out = await aiPublicAlertDraft({ title: current.title, description: current.description, severity: current.severity, location: current.location_text ?? undefined });
+      setToolResult({ kind: "Public Alert Draft", content: `SMS:\n${out.sms}\n\nTwitter:\n${out.tweet}\n\nPress note:\n${out.press}` });
+    } catch (e) { toast.error(e instanceof Error ? e.message : "Failed"); } finally { setToolBusy(null); }
+  };
 
   useEffect(() => {
     db.from("incident_media").select("*").eq("incident_id", incident.id).then(async ({ data }: { data: { id: string; file_path: string; mime_type: string | null; kind: string }[] | null }) => {

@@ -16,7 +16,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/hooks/use-auth";
 import { db, type IncidentRow, type IncidentSeverity, type IncidentStatus, type IncidentCategory } from "@/lib/db";
-import { analyzeIncidentClient } from "@/lib/ai-incident";
+import { analyzeIncidentClient, aiRootCauseAnalysis, aiIncidentTranslate, aiPublicAlertDraft } from "@/lib/ai-incident";
 import { downloadIncidentPdf } from "@/lib/incident-pdf";
 import { ensureNotificationPermission, showBrowserNotification, notifyUser } from "@/lib/notifications";
 import { IncidentMap } from "@/components/incident-map";

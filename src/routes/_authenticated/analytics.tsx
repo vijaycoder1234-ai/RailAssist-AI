@@ -100,19 +100,17 @@ function AnalyticsPage() {
     setAnalysisBusy(true);
     try {
       const out = await aiTrendAnalyzer({
-        data: {
-          totals: {
-            open: kpis.open,
-            critical: kpis.critical,
-            resolved: kpis.resolved,
-            resolutionRate: kpis.resolutionRate,
-            avgAssetHealth: kpis.avgHealth,
-          },
-          byCategory,
-          bySeverity,
-          byZone,
-          trend30d: trend,
+        totals: {
+          open: kpis.open,
+          critical: kpis.critical,
+          resolved: kpis.resolved,
+          resolutionRate: kpis.resolutionRate,
+          avgAssetHealth: kpis.avgHealth,
         },
+        byCategory,
+        bySeverity,
+        byZone,
+        trend30d: trend,
       });
       setAnalysis(out);
     } catch (e) {

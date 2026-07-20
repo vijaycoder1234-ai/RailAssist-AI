@@ -64,17 +64,15 @@ function MaintenancePage() {
     setAiBusy(true);
     try {
       const pending = tasks.filter((t) => t.status !== "completed" && t.status !== "rejected").slice(0, 30);
-      const out = await aiMaintenancePrioritizer({
-        data: {
-          tasks: pending.map((t) => ({
-            id: t.id,
-            title: incidents[t.incident_id]?.title ?? "Maintenance task",
-            priority: t.priority,
-            status: t.status,
-            due_at: t.due_at,
-          })),
-        },
-      });
+      const out = await aiMaintenancePrioritizer(
+        pending.map((t) => ({
+          id: t.id,
+          title: incidents[t.incident_id]?.title ?? "Maintenance task",
+          priority: t.priority,
+          status: t.status,
+          due_at: t.due_at,
+        })),
+      );
       setAiPlan(out);
       toast.success("AI prioritization ready");
     } catch (e) {

@@ -410,22 +410,27 @@ function IncidentDetailDialog({ incident, canManage, isSuperAdmin, onChanged, on
     setToolBusy("rca"); setToolResult(null);
     try {
       const out = await aiRootCauseAnalysis({ title: current.title, description: current.description, category: current.category });
-      const text = [`Root cause: ${out.root_cause}`, "", "5 Whys:", ...out.whys.map((w, i) => `${i + 1}. ${w}`), "", "Contributing factors:", ...out.contributing.map((c) => `• ${c}`), "", "Preventive actions:", ...out.preventive.map((p) => `• ${p}`)].join("\n");
+      const text = [
+        `Root cause: ${out.root_cause}`, "",
+        "Causal chain:", ...out.chain.map((w, i) => `${i + 1}. ${w}`), "",
+        "Contributing factors:", ...out.contributing_factors.map((c) => `• ${c}`), "",
+        "Preventive actions:", ...out.prevention.map((p) => `• ${p}`),
+      ].join("\n");
       setToolResult({ kind: "Root Cause (5-Whys)", content: text });
     } catch (e) { toast.error(e instanceof Error ? e.message : "Failed"); } finally { setToolBusy(null); }
   };
   const runTranslate = async () => {
     setToolBusy("translate"); setToolResult(null);
     try {
-      const out = await aiIncidentTranslate({ title: current.title, description: current.description, target_language: translateLang });
-      setToolResult({ kind: `Translation (${translateLang})`, content: `${out.title}\n\n${out.description}` });
+      const out = await aiIncidentTranslate(`${current.title}\n\n${current.description}`, translateLang);
+      setToolResult({ kind: `Translation (${translateLang})`, content: out });
     } catch (e) { toast.error(e instanceof Error ? e.message : "Failed"); } finally { setToolBusy(null); }
   };
   const runAlert = async () => {
     setToolBusy("alert"); setToolResult(null);
     try {
-      const out = await aiPublicAlertDraft({ title: current.title, description: current.description, severity: current.severity, location: current.location_text ?? undefined });
-      setToolResult({ kind: "Public Alert Draft", content: `SMS:\n${out.sms}\n\nTwitter:\n${out.tweet}\n\nPress note:\n${out.press}` });
+      const out = await aiPublicAlertDraft({ title: current.title, description: current.description, severity: current.severity });
+      setToolResult({ kind: "Public Alert Draft", content: `Public alert:\n${out.public_alert}\n\nSMS:\n${out.sms}\n\nTwitter:\n${out.twitter}` });
     } catch (e) { toast.error(e instanceof Error ? e.message : "Failed"); } finally { setToolBusy(null); }
   };
 

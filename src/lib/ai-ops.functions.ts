@@ -29,6 +29,20 @@ const PrioritizerInput = z.object({
     .max(50),
 });
 
+const TrendInput = z.object({
+  totals: z.object({
+    open: z.number(),
+    critical: z.number(),
+    resolved: z.number(),
+    resolutionRate: z.number(),
+    avgAssetHealth: z.number(),
+  }),
+  byCategory: z.array(z.object({ name: z.string(), value: z.number() })).max(20),
+  bySeverity: z.array(z.object({ name: z.string(), value: z.number() })).max(10),
+  byZone: z.array(z.object({ name: z.string(), count: z.number() })).max(20),
+  trend30d: z.array(z.object({ date: z.string(), count: z.number() })).max(60),
+});
+
 async function callGateway(systemMsg: string, userMsg: string) {
   const key = process.env.LOVABLE_API_KEY;
   if (!key) throw new Error("LOVABLE_API_KEY is not configured on the server.");

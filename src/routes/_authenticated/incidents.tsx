@@ -412,9 +412,9 @@ function IncidentDetailDialog({ incident, canManage, isSuperAdmin, onChanged, on
       const out = await aiRootCauseAnalysis({ title: current.title, description: current.description, category: current.category });
       const text = [
         `Root cause: ${out.root_cause}`, "",
-        "Causal chain:", ...out.chain.map((w, i) => `${i + 1}. ${w}`), "",
-        "Contributing factors:", ...out.contributing_factors.map((c) => `• ${c}`), "",
-        "Preventive actions:", ...out.prevention.map((p) => `• ${p}`),
+        "Causal chain:", ...out.chain.map((w: string, i: number) => `${i + 1}. ${w}`), "",
+        "Contributing factors:", ...out.contributing_factors.map((c: string) => `• ${c}`), "",
+        "Preventive actions:", ...out.prevention.map((p: string) => `• ${p}`),
       ].join("\n");
       setToolResult({ kind: "Root Cause (5-Whys)", content: text });
     } catch (e) { toast.error(e instanceof Error ? e.message : "Failed"); } finally { setToolBusy(null); }

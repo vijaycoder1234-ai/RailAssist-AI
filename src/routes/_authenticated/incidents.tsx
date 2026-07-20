@@ -631,6 +631,43 @@ function IncidentDetailDialog({ incident, canManage, isSuperAdmin, onChanged, on
           </CardContent>
         </Card>
 
+        <Card className="border-primary/20">
+          <CardContent className="p-4 space-y-3">
+            <div className="flex items-center gap-2 font-semibold text-sm">
+              <Sparkles className="h-4 w-4 text-primary" /> AI Toolbox
+              <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Gemini</span>
+            </div>
+            <div className="flex flex-wrap gap-2 items-center">
+              <Button size="sm" variant="outline" onClick={runRca} disabled={toolBusy !== null}>
+                {toolBusy === "rca" ? <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5 mr-1.5" />}
+                Root Cause (5-Whys)
+              </Button>
+              <div className="flex items-center gap-1">
+                <Select value={translateLang} onValueChange={setTranslateLang}>
+                  <SelectTrigger className="h-8 w-28"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {[["hi","Hindi"],["ta","Tamil"],["bn","Bengali"],["mr","Marathi"],["te","Telugu"],["gu","Gujarati"],["kn","Kannada"],["ml","Malayalam"],["pa","Punjabi"],["en","English"]].map(([v,l]) => <SelectItem key={v} value={v}>{l}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+                <Button size="sm" variant="outline" onClick={runTranslate} disabled={toolBusy !== null}>
+                  {toolBusy === "translate" ? <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> : null}
+                  Translate
+                </Button>
+              </div>
+              <Button size="sm" variant="outline" onClick={runAlert} disabled={toolBusy !== null}>
+                {toolBusy === "alert" ? <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> : null}
+                Draft Public Alert
+              </Button>
+            </div>
+            {toolResult && (
+              <div className="rounded-md border bg-muted/40 p-3">
+                <div className="text-xs font-semibold mb-1">{toolResult.kind}</div>
+                <pre className="whitespace-pre-wrap text-xs font-sans leading-relaxed">{toolResult.content}</pre>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
         {isSuperAdmin && (
           <AssignMaintenanceCard incident={current} onAssigned={onChanged} />
         )}

@@ -15,7 +15,7 @@ import { db, type IncidentRow } from "@/lib/db";
 import { notifyUser, ensureNotificationPermission } from "@/lib/notifications";
 import { downloadMaintenancePdf } from "@/lib/incident-pdf";
 import { downloadMaintenanceOpsReport } from "@/lib/ops-report-pdf";
-import { aiMaintenancePrioritizer } from "@/lib/ai-ops.functions";
+import { aiMaintenancePrioritizer } from "@/lib/ai-incident";
 import { Wrench, ImagePlus, Loader2, CheckCircle2, Clock, Activity, Download, FileBarChart2, Sparkles } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/maintenance")({
@@ -64,17 +64,15 @@ function MaintenancePage() {
     setAiBusy(true);
     try {
       const pending = tasks.filter((t) => t.status !== "completed" && t.status !== "rejected").slice(0, 30);
-      const out = await aiMaintenancePrioritizer({
-        data: {
-          tasks: pending.map((t) => ({
-            id: t.id,
-            title: incidents[t.incident_id]?.title ?? "Maintenance task",
-            priority: t.priority,
-            status: t.status,
-            due_at: t.due_at,
-          })),
-        },
-      });
+      const out = await aiMaintenancePrioritizer(
+        pending.map((t) => ({
+          id: t.id,
+          title: incidents[t.incident_id]?.title ?? "Maintenance task",
+          priority: t.priority,
+          status: t.status,
+          due_at: t.due_at,
+        })),
+      );
       setAiPlan(out);
       toast.success("AI prioritization ready");
     } catch (e) {

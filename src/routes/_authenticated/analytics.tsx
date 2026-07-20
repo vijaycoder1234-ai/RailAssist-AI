@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { db, type IncidentRow, type AssetRow } from "@/lib/db";
-import { aiTrendAnalyzer } from "@/lib/ai-ops.functions";
+import { aiTrendAnalyzer } from "@/lib/ai-incident";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend,
   LineChart, Line, CartesianGrid,
@@ -100,19 +100,17 @@ function AnalyticsPage() {
     setAnalysisBusy(true);
     try {
       const out = await aiTrendAnalyzer({
-        data: {
-          totals: {
-            open: kpis.open,
-            critical: kpis.critical,
-            resolved: kpis.resolved,
-            resolutionRate: kpis.resolutionRate,
-            avgAssetHealth: kpis.avgHealth,
-          },
-          byCategory,
-          bySeverity,
-          byZone,
-          trend30d: trend,
+        totals: {
+          open: kpis.open,
+          critical: kpis.critical,
+          resolved: kpis.resolved,
+          resolutionRate: kpis.resolutionRate,
+          avgAssetHealth: kpis.avgHealth,
         },
+        byCategory,
+        bySeverity,
+        byZone,
+        trend30d: trend,
       });
       setAnalysis(out);
     } catch (e) {

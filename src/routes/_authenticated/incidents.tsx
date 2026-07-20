@@ -16,7 +16,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/hooks/use-auth";
 import { db, type IncidentRow, type IncidentSeverity, type IncidentStatus, type IncidentCategory } from "@/lib/db";
-import { analyzeIncidentClient } from "@/lib/ai-incident";
+import { analyzeIncidentClient, aiRootCauseAnalysis, aiIncidentTranslate, aiPublicAlertDraft } from "@/lib/ai-incident";
 import { downloadIncidentPdf } from "@/lib/incident-pdf";
 import { ensureNotificationPermission, showBrowserNotification, notifyUser } from "@/lib/notifications";
 import { IncidentMap } from "@/components/incident-map";
@@ -402,6 +402,37 @@ function IncidentDetailDialog({ incident, canManage, isSuperAdmin, onChanged, on
   const [aiActions, setAiActions] = useState<string[]>([]);
   const [aiEta, setAiEta] = useState<string | null>(null);
   const [streamingText, setStreamingText] = useState<string>("");
+  const [toolBusy, setToolBusy] = useState<"rca" | "translate" | "alert" | null>(null);
+  const [toolResult, setToolResult] = useState<{ kind: string; content: string } | null>(null);
+  const [translateLang, setTranslateLang] = useState<string>("hi");
+
+  const runRca = async () => {
+    setToolBusy("rca"); setToolResult(null);
+    try {
+      const out = await aiRootCauseAnalysis({ title: current.title, description: current.description, category: current.category });
+      const text = [
+        `Root cause: ${out.root_cause}`, "",
+        "Causal chain:", ...out.chain.map((w: string, i: number) => `${i + 1}. ${w}`), "",
+        "Contributing factors:", ...out.contributing_factors.map((c: string) => `• ${c}`), "",
+        "Preventive actions:", ...out.prevention.map((p: string) => `• ${p}`),
+      ].join("\n");
+      setToolResult({ kind: "Root Cause (5-Whys)", content: text });
+    } catch (e) { toast.error(e instanceof Error ? e.message : "Failed"); } finally { setToolBusy(null); }
+  };
+  const runTranslate = async () => {
+    setToolBusy("translate"); setToolResult(null);
+    try {
+      const out = await aiIncidentTranslate(`${current.title}\n\n${current.description}`, translateLang);
+      setToolResult({ kind: `Translation (${translateLang})`, content: out });
+    } catch (e) { toast.error(e instanceof Error ? e.message : "Failed"); } finally { setToolBusy(null); }
+  };
+  const runAlert = async () => {
+    setToolBusy("alert"); setToolResult(null);
+    try {
+      const out = await aiPublicAlertDraft({ title: current.title, description: current.description, severity: current.severity });
+      setToolResult({ kind: "Public Alert Draft", content: `Public alert:\n${out.public_alert}\n\nSMS:\n${out.sms}\n\nTwitter:\n${out.twitter}` });
+    } catch (e) { toast.error(e instanceof Error ? e.message : "Failed"); } finally { setToolBusy(null); }
+  };
 
   useEffect(() => {
     db.from("incident_media").select("*").eq("incident_id", incident.id).then(async ({ data }: { data: { id: string; file_path: string; mime_type: string | null; kind: string }[] | null }) => {
@@ -595,6 +626,43 @@ function IncidentDetailDialog({ incident, canManage, isSuperAdmin, onChanged, on
                     </li>
                   ))}
                 </ol>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="border-primary/20">
+          <CardContent className="p-4 space-y-3">
+            <div className="flex items-center gap-2 font-semibold text-sm">
+              <Sparkles className="h-4 w-4 text-primary" /> AI Toolbox
+              <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Gemini</span>
+            </div>
+            <div className="flex flex-wrap gap-2 items-center">
+              <Button size="sm" variant="outline" onClick={runRca} disabled={toolBusy !== null}>
+                {toolBusy === "rca" ? <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5 mr-1.5" />}
+                Root Cause (5-Whys)
+              </Button>
+              <div className="flex items-center gap-1">
+                <Select value={translateLang} onValueChange={setTranslateLang}>
+                  <SelectTrigger className="h-8 w-28"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {[["hi","Hindi"],["ta","Tamil"],["bn","Bengali"],["mr","Marathi"],["te","Telugu"],["gu","Gujarati"],["kn","Kannada"],["ml","Malayalam"],["pa","Punjabi"],["en","English"]].map(([v,l]) => <SelectItem key={v} value={v}>{l}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+                <Button size="sm" variant="outline" onClick={runTranslate} disabled={toolBusy !== null}>
+                  {toolBusy === "translate" ? <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> : null}
+                  Translate
+                </Button>
+              </div>
+              <Button size="sm" variant="outline" onClick={runAlert} disabled={toolBusy !== null}>
+                {toolBusy === "alert" ? <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> : null}
+                Draft Public Alert
+              </Button>
+            </div>
+            {toolResult && (
+              <div className="rounded-md border bg-muted/40 p-3">
+                <div className="text-xs font-semibold mb-1">{toolResult.kind}</div>
+                <pre className="whitespace-pre-wrap text-xs font-sans leading-relaxed">{toolResult.content}</pre>
               </div>
             )}
           </CardContent>

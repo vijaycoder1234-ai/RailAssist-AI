@@ -93,14 +93,72 @@ function AnalyticsPage() {
     return days;
   }, [incidents]);
 
+  const [analysis, setAnalysis] = useState<{ verdict: string; score: number; headline: string; summary: string; hotspots: string[]; predictions: string[]; actions: string[] } | null>(null);
+  const [analysisBusy, setAnalysisBusy] = useState(false);
+
+  const runAnalysis = async () => {
+    setAnalysisBusy(true);
+    try {
+      const out = await aiTrendAnalyzer({
+        data: {
+          totals: {
+            open: kpis.open,
+            critical: kpis.critical,
+            resolved: kpis.resolved,
+            resolutionRate: kpis.resolutionRate,
+            avgAssetHealth: kpis.avgHealth,
+          },
+          byCategory,
+          bySeverity,
+          byZone,
+          trend30d: trend,
+        },
+      });
+      setAnalysis(out);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "AI analysis failed");
+    } finally {
+      setAnalysisBusy(false);
+    }
+  };
+
   if (!isSuperAdmin) return null;
 
   return (
     <AppShell kind="admin">
-      <div>
-        <h1 className="font-display text-2xl sm:text-3xl font-bold tracking-tight">Safety Monitoring</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Live KPIs, severity mix, zone hotspots and 30-day incident trend.</p>
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <h1 className="font-display text-2xl sm:text-3xl font-bold tracking-tight">Safety Monitoring</h1>
+          <p className="mt-1 text-sm text-muted-foreground">Live KPIs, severity mix, zone hotspots and 30-day incident trend.</p>
+        </div>
+        <Button size="sm" onClick={runAnalysis} disabled={analysisBusy || incidents.length === 0}>
+          {analysisBusy ? <><Loader2 className="h-4 w-4 mr-1.5 animate-spin" />Analysing…</> : <><Sparkles className="h-4 w-4 mr-1.5" />AI Trend Analyser</>}
+        </Button>
       </div>
+
+      {analysis && (
+        <Card className="mt-4 border-primary/30 bg-gradient-to-br from-primary/5 to-transparent">
+          <CardContent className="p-5 space-y-3">
+            <div className="flex items-center gap-3 flex-wrap">
+              <Badge variant="outline" className="capitalize">{analysis.verdict}</Badge>
+              <span className="font-display text-lg font-semibold">{analysis.headline}</span>
+              <span className="ml-auto text-sm text-muted-foreground">Safety score: <span className="font-bold text-foreground">{analysis.score}/100</span></span>
+            </div>
+            <p className="text-sm text-muted-foreground">{analysis.summary}</p>
+            <div className="grid gap-3 md:grid-cols-3 text-sm">
+              {analysis.hotspots.length > 0 && (
+                <div><div className="font-medium mb-1">Hotspots</div><ul className="list-disc pl-5 space-y-0.5 text-muted-foreground">{analysis.hotspots.map((h, i) => <li key={i}>{h}</li>)}</ul></div>
+              )}
+              {analysis.predictions.length > 0 && (
+                <div><div className="font-medium mb-1">Predicted risks</div><ul className="list-disc pl-5 space-y-0.5 text-muted-foreground">{analysis.predictions.map((h, i) => <li key={i}>{h}</li>)}</ul></div>
+              )}
+              {analysis.actions.length > 0 && (
+                <div><div className="font-medium mb-1">Recommended actions</div><ol className="list-decimal pl-5 space-y-0.5 text-muted-foreground">{analysis.actions.map((h, i) => <li key={i}>{h}</li>)}</ol></div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="mt-6 grid gap-3 grid-cols-2 lg:grid-cols-5">
         <Kpi label="Open" value={kpis.open} icon={Activity} tone="text-warning" />

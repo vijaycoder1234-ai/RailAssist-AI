@@ -1,15 +1,18 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 import { AppShell } from "@/components/app-shell";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { db, type IncidentRow, type AssetRow } from "@/lib/db";
+import { aiTrendAnalyzer } from "@/lib/ai-ops.functions";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend,
   LineChart, Line, CartesianGrid,
 } from "recharts";
-import { Activity, AlertTriangle, ShieldCheck, TrendingUp, Wrench } from "lucide-react";
+import { Activity, AlertTriangle, ShieldCheck, TrendingUp, Wrench, Sparkles, Loader2 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/analytics")({
   head: () => ({ meta: [{ title: "Safety Analytics — RailAssist AI" }] }),

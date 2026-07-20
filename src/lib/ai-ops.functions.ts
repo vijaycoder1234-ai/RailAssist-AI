@@ -29,6 +29,20 @@ const PrioritizerInput = z.object({
     .max(50),
 });
 
+const TrendInput = z.object({
+  totals: z.object({
+    open: z.number(),
+    critical: z.number(),
+    resolved: z.number(),
+    resolutionRate: z.number(),
+    avgAssetHealth: z.number(),
+  }),
+  byCategory: z.array(z.object({ name: z.string(), value: z.number() })).max(20),
+  bySeverity: z.array(z.object({ name: z.string(), value: z.number() })).max(10),
+  byZone: z.array(z.object({ name: z.string(), count: z.number() })).max(20),
+  trend30d: z.array(z.object({ date: z.string(), count: z.number() })).max(60),
+});
+
 async function callGateway(systemMsg: string, userMsg: string) {
   const key = process.env.LOVABLE_API_KEY;
   if (!key) throw new Error("LOVABLE_API_KEY is not configured on the server.");
@@ -131,4 +145,40 @@ ${list}`,
           .filter((o: { id: string }) => o.id)
       : [];
     return { strategy: String(out.strategy ?? ""), order };
+  });
+
+/**
+ * AI Safety Trend Analyzer — inspects platform KPIs and produces an
+ * executive-grade analysis of trends, hotspots, and predicted risk.
+ */
+export const aiTrendAnalyzer = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) => TrendInput.parse(input))
+  .handler(async ({ data }) => {
+    const trendLine = data.trend30d.map((d) => `${d.date}:${d.count}`).join(" ");
+    const cats = data.byCategory.map((c) => `${c.name}=${c.value}`).join(", ");
+    const sev = data.bySeverity.map((s) => `${s.name}=${s.value}`).join(", ");
+    const zones = data.byZone.map((z) => `${z.name}=${z.count}`).join(", ");
+
+    const out = await callGateway(
+      "You are the head of railway safety analytics. You transform raw KPIs into decisive, quantitative insights. Respond ONLY in strict JSON.",
+      `Analyse this network's safety posture. Respond as JSON:
+{"verdict": "improving"|"stable"|"worsening", "score": number, "headline": string, "summary": string, "hotspots": string[], "predictions": string[], "actions": string[]}
+
+score: 0-100 overall safety score (higher = safer). headline: <=12 words. summary: 3-4 sentences. hotspots: 2-4 concrete zones/categories. predictions: 2-3 forward-looking risks for the next 7-14 days. actions: 3-5 prioritised interventions.
+
+Totals: open=${data.totals.open}, critical=${data.totals.critical}, resolved=${data.totals.resolved}, resolutionRate=${data.totals.resolutionRate}%, avgAssetHealth=${data.totals.avgAssetHealth}%
+Severity: ${sev}
+Categories: ${cats}
+Zone hotspots: ${zones}
+30-day trend (date:count): ${trendLine}`,
+    );
+    return {
+      verdict: (["improving", "stable", "worsening"] as const).includes(out.verdict) ? out.verdict : "stable",
+      score: Number(out.score ?? 0),
+      headline: String(out.headline ?? "Safety Analysis"),
+      summary: String(out.summary ?? ""),
+      hotspots: Array.isArray(out.hotspots) ? out.hotspots.map(String) : [],
+      predictions: Array.isArray(out.predictions) ? out.predictions.map(String) : [],
+      actions: Array.isArray(out.actions) ? out.actions.map(String) : [],
+    };
   });

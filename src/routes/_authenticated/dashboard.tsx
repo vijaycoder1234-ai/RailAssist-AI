@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { db, type IncidentRow, type IncidentSeverity } from "@/lib/db";
 import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
-import { aiDailyBriefing } from "@/lib/ai-ops.functions";
+import { aiDailyBriefing } from "@/lib/ai-incident";
 import { AlertTriangle, CheckCircle2, Clock, Activity, Plus, Sparkles, Loader2 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
